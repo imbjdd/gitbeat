@@ -280,8 +280,8 @@ export default function Home() {
         {/* Song Upload Section */}
         <div className="my-24">
           <div className="text-center mb-6">
-            <h2 className="text-5xl font-bold mb-2 bg-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(16,185,129,0.6)] flex items-center justify-center gap-3">Upload your <span className="bg-emerald-300 text-black px-2 py-1 rounded">beats</span> <Music className="text-emerald-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]" size={48} /></h2>
-            <p className="text-slate-400 text-sm">Upload your song with GitHub repository info</p>
+            <h2 className="text-5xl font-bold mb-2 bg-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(16,185,129,0.6)] flex items-center justify-center gap-3">Turn your GitHub repo into <span className="bg-emerald-300 text-black px-2 py-1 rounded">beats</span> <Music className="text-emerald-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]" size={48} /></h2>
+            <p className="text-slate-400 text-sm">Paste your GitHub repository URL to generate music</p>
           </div>
           
           <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-4">

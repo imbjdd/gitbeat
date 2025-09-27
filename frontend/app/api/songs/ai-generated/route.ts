@@ -68,10 +68,14 @@ export async function POST(request: NextRequest) {
       console.log("✅ Created new repository:", repositoryId);
     }
 
-    // Create song record (without audio_url for now, will be updated by callback)
+    // Create song record with audio URL if available
+    const audioUrl = suno_response && typeof suno_response === 'object' && 'audioUrl' in suno_response 
+      ? suno_response.audioUrl as string 
+      : null;
+      
     const songData = {
       repository_id: repositoryId,
-      audio_url: null, // Will be updated by callback when generation is complete
+      audio_url: audioUrl,
       lyrics_url: null, // We could store the dust analysis as lyrics
     };
 

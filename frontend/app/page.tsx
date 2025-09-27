@@ -12,9 +12,9 @@ interface Song {
   updated_at: string;
   upvote_count: number;
   repository: {
-    id: string;
-    name: string;
-    url: string;
+  id: string;
+  name: string;
+  url: string;
     created_at: string;
     updated_at: string;
   };
@@ -133,7 +133,7 @@ export default function Home() {
       if (data.success) {
         // Add the new song to the beginning of the list
         setSongs([data.song, ...songs]);
-        setRepoUrl("");
+    setRepoUrl("");
         setTitle("");
         setAudioFile(null);
         setLyrics("");
@@ -286,11 +286,11 @@ export default function Home() {
           
           <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-4">
             {/* Repository URL */}
-            <input
-              type="url"
-              value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
-              placeholder="https://github.com/username/repository"
+              <input
+                type="url"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder="https://github.com/username/repository"
               required
               className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
             />
@@ -330,13 +330,13 @@ export default function Home() {
               />
             </div>
             
-            <button
-              type="submit"
-              disabled={submitting || !repoUrl.trim() || !title.trim() || !audioFile}
-              className="w-full px-8 py-3 bg-emerald-300 text-black font-semibold rounded-md hover:bg-emerald-400 hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/50 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
+              <button
+                type="submit"
+                disabled={submitting || !repoUrl.trim() || !title.trim() || !audioFile}
+                className="w-full px-8 py-3 bg-emerald-300 text-black font-semibold rounded-md hover:bg-emerald-400 hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/50 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
+              >
               {submitting ? 'Uploading...' : 'Upload Song'}
-            </button>
+              </button>
           </form>
         </div>
 
@@ -353,7 +353,7 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {/* Leaderboard List */}
+          {/* Leaderboard List */}
               <div className="space-y-3 transition-all duration-300">
                 {songs
                   .sort((a, b) => b.upvote_count - a.upvote_count) // Sort by upvotes descending
@@ -378,9 +378,9 @@ export default function Home() {
                       transitionDuration: '800ms',
                       transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
-                  >
-                    <div className="flex items-center">
-                      {/* Rank */}
+              >
+                <div className="flex items-center">
+                  {/* Rank */}
                       <div className="relative">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-500 ${
                           rankingChanges.has(song.id) 
@@ -395,9 +395,9 @@ export default function Home() {
                             ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/50' // 3rd place
                             : 'text-white' // Other ranks
                         }`}>
-                          {index + 1}
-                        </div>
-                        
+                    {index + 1}
+                  </div>
+
                         {/* Ranking direction indicator */}
                         {rankingChanges.has(song.id) && rankingDirections[song.id] && (
                           <div className={`absolute -top-2 -right-2 w-4 h-4 rounded-full flex items-center justify-center text-xs animate-ping ${
@@ -411,17 +411,17 @@ export default function Home() {
                       </div>
 
                       {/* Song info */}
-                      <div className="flex items-center gap-3 ml-4 min-w-[200px]">
-                        <div>
+                  <div className="flex items-center gap-3 ml-4 min-w-[200px]">
+                    <div>
                           <div className="font-semibold text-white hover:text-emerald-400 transition-colors drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]">
                             {song.title || `${song.repository.name} Beat`}
                           </div>
-                          <a
+                      <a
                             href={song.repository.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-slate-400 hover:text-emerald-400 transition-colors hover:drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]"
-                          >
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-slate-400 hover:text-emerald-400 transition-colors hover:drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]"
+                      >
                             {song.repository.url.replace('https://github.com/', '')}
                           </a>
                           {song.lyrics_url && (
@@ -434,79 +434,79 @@ export default function Home() {
                               View Lyrics
                             </a>
                           )}
-                        </div>
-                      </div>
+                    </div>
+                  </div>
 
-                      {/* Stats */}
+                  {/* Stats */}
                       <div className="flex items-center gap-8 ml-8 min-w-[200px]">
-                        <div className="text-center">
+                    <div className="text-center">
                           <div className={`text-lg font-bold text-white hover:text-violet-300 transition-all duration-300 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] ${
                             recentlyUpvoted.has(song.id) ? 'scale-125 text-violet-300' : ''
                           }`}>
                             {song.upvote_count}
                           </div>
                           <div className="text-xs text-slate-400">upvotes</div>
-                        </div>
-                        <div className="text-center">
+                    </div>
+                    <div className="text-center">
                           <div className="text-lg font-bold text-emerald-400 hover:text-emerald-300 transition-colors drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]">
                             {song.audio_url ? '🎵' : '⏳'}
-                          </div>
+                    </div>
                           <div className="text-xs text-slate-400">audio</div>
-                        </div>
-                      </div>
+                    </div>
+                  </div>
 
-                      {/* Progress bar */}
-                      <div className="flex-1 mx-8">
-                        <div className="flex justify-between text-xs text-slate-400 mb-1">
-                          <span>popularity</span>
+                  {/* Progress bar */}
+                  <div className="flex-1 mx-8">
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>popularity</span>
                           <span>{(() => {
                             const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
                             const percentage = Math.round((song.upvote_count / maxUpvotes) * 100);
                             return `${percentage}%`;
                           })()}</span>
-                        </div>
-                        <div className="w-full bg-slate-700 rounded-lg h-2 overflow-hidden shadow-inner">
-                          <div 
-                            className="bg-emerald-300 h-2 rounded-lg hover:from-fuchsia-500 hover:to-violet-500 transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-lg h-2 overflow-hidden shadow-inner">
+                      <div 
+                        className="bg-emerald-300 h-2 rounded-lg hover:from-fuchsia-500 hover:to-violet-500 transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
                             style={{ 
                               width: `${(() => {
                                 const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
                                 return Math.round((song.upvote_count / maxUpvotes) * 100);
                               })()}%` 
                             }}
-                          ></div>
-                        </div>
-                      </div>
+                      ></div>
+                    </div>
+                  </div>
 
-                      {/* Play button */}
-                      <button
+                  {/* Play button */}
+                  <button
                         onClick={() => togglePlay(song.id)}
-                        className="w-10 h-10 text-white rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 mr-3 flex items-center justify-center "
-                      >
+                        className="hover:cursor-pointer w-10 h-10 text-white rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 mr-3 flex items-center justify-center "
+                  >
                         {playingId === song.id && isPlaying ? (
-                          <Pause size={16} />
-                        ) : (
-                          <Play size={16} />
-                        )}
-                      </button>
-                    
-                      {/* Upvote button */}
-                      <button
+                      <Pause size={16} />
+                    ) : (
+                      <Play size={16} />
+                    )}
+                  </button>
+                
+                  {/* Upvote button */}
+                  <button
                         onClick={() => handleUpvote(song.id)}
-                        className={`w-10 h-10 text-black rounded-md transition-all duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] ${
+                        className={`hover:cursor-pointer w-10 h-10 text-black rounded-md transition-all duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] ${
                           recentlyUpvoted.has(song.id)
                             ? 'bg-violet-400 scale-110 shadow-lg shadow-violet-500/50 animate-pulse'
                             : 'bg-emerald-300 hover:bg-violet-400 hover:scale-105 hover:shadow-lg hover:shadow-violet-500/50'
                         }`}
                       >
                         <ArrowUp size={16} className={recentlyUpvoted.has(song.id) ? 'animate-bounce' : ''} />
-                      </button>
+                  </button>
 
-                    </div>
+                </div>
 
                     {/* Enhanced Playing indicator with controls */}
                     {playingId === song.id && (
-                      <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="mt-4 pt-4 border-t border-slate-700">
                         <div className="flex items-center justify-between mb-2">
                           <div className="text-xs text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
                             {isPlaying ? '♪ playing beat...' : 'paused'}
@@ -548,7 +548,7 @@ export default function Home() {
                         <div className="flex items-center justify-center mt-3 gap-2">
                           <button
                             onClick={() => togglePlay(song.id)}
-                            className="w-8 h-8 bg-emerald-400 text-black rounded-full hover:bg-emerald-300 transition-all duration-200 flex items-center justify-center hover:scale-110"
+                            className="w-8 h-8 bg-emerald-400 text-black rounded-full hover:bg-emerald-300 transition-all duration-200 flex items-center justify-center hover:scale-110 hover:cursor-pointer"
                           >
                             {isPlaying ? <Pause size={12} /> : <Play size={12} />}
                           </button>
@@ -556,18 +556,18 @@ export default function Home() {
                           <div className="text-xs text-slate-400 ml-2">
                             Click on the progress bar to seek
                           </div>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
+            ))}
+          </div>
 
               {songs.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-gray-500 text-lg mb-2">No beats generated yet</div>
-                  <div className="text-gray-400 text-sm">Add your first GitHub repo above to get started!</div>
-                </div>
+            <div className="text-center py-12">
+              <div className="text-gray-500 text-lg mb-2">No beats generated yet</div>
+              <div className="text-gray-400 text-sm">Add your first GitHub repo above to get started!</div>
+            </div>
               )}
             </>
           )}

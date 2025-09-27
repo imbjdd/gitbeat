@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Pause, ArrowUp } from "lucide-react";
+import { Play, Pause, ArrowUp, Music } from "lucide-react";
 
 interface Repo {
   id: string;
@@ -94,7 +94,7 @@ export default function Home() {
         {/* GitHub Repo Input Section */}
         <div className="my-24">
           <div className="text-center mb-6">
-            <h2 className="text-5xl font-bold mb-2 bg-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]">Turn your GitHub repo into beats 🎵</h2>
+            <h2 className="text-5xl font-bold mb-2 bg-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(16,185,129,0.6)] flex items-center justify-center gap-3">Turn your GitHub repo into <span className="bg-emerald-300 text-black px-2 py-1 rounded">beats</span> <Music className="text-emerald-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]" size={48} /></h2>
             <p className="text-slate-400 text-sm">Paste your GitHub repository URL below to generate music</p>
           </div>
           

@@ -319,7 +319,7 @@ export default function Home() {
               onClick={() => setActiveTab('repo')}
               className={`px-6 py-2 rounded-md font-medium transition-all duration-300 hover:cursor-pointer ${
                 activeTab === 'repo'
-                  ? 'bg-emerald-300 text-black shadow-lg shadow-emerald-300/50'
+                  ? 'bg-yellow-200 text-black shadow-lg shadow-yellow-200/50'
                   : 'text-slate-400 hover:text-white hover:bg-slate-700'
               }`}
             >
@@ -632,8 +632,8 @@ export default function Home() {
           <div className="space-y-8 my-24">
             {/* Repository Analysis Header */}
             <div className="text-center mb-8">
-              <h2 className="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] flex items-center justify-center gap-3">
-                Analyze GitHub <span className="bg-purple-400 text-black px-2 py-1 rounded">Repository</span> 
+              <h2 className="text-5xl font-bold mb-2 text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)] flex items-center justify-center gap-3">
+                Analyze GitHub <span className="bg-yellow-200 text-black px-2 py-1 rounded">Repository</span> 
               </h2>
               <p className="text-slate-400 text-sm">Get insights into contributors, languages, and activity for any repository</p>
             </div>
@@ -646,13 +646,13 @@ export default function Home() {
                   value={githubRepoUrl}
                   onChange={(e) => setGithubRepoUrl(e.target.value)}
                   placeholder="Enter GitHub repository URL (e.g., https://github.com/owner/repo)"
-                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:shadow-lg focus:shadow-purple-400/50 hover:bg-slate-800 transition-all duration-300"
+                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-yellow-200 focus:shadow-lg focus:shadow-yellow-200/50 hover:bg-slate-800 transition-all duration-300"
                   required
                 />
                 <button
                   type="submit"
                   disabled={repoLoading || !githubRepoUrl.trim()}
-                  className="px-8 py-3 bg-purple-400 text-black font-semibold rounded-md hover:bg-purple-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-400/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
+                  className="px-8 py-3 bg-yellow-200 text-black font-semibold rounded-md hover:bg-yellow-100 hover:scale-105 hover:shadow-lg hover:shadow-yellow-200/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
                 >
                   {repoLoading ? 'Analyzing...' : 'Analyze Repository'}
                 </button>
@@ -663,18 +663,18 @@ export default function Home() {
             {repoData && (
               <div className="space-y-6">
                 {/* Repository Header */}
-                <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 shadow-[0_0_20px_rgba(250,204,21,0.1)]">
                   <div className="flex items-center gap-6">
                     <img
                       src={repoData.repository.owner.avatar_url}
                       alt={repoData.repository.owner.login}
-                      className="w-20 h-20 rounded-full border-2 border-purple-400 shadow-lg"
+                      className="w-20 h-20 rounded-full border-2 border-yellow-200 shadow-lg"
                     />
                     <div>
                       <h3 className="text-2xl font-bold text-white">
                         {repoData.repository.name}
                       </h3>
-                      <p className="text-purple-400 font-medium">by @{repoData.repository.owner.login}</p>
+                      <p className="text-yellow-200 font-medium">by @{repoData.repository.owner.login}</p>
                       {repoData.repository.description && (
                         <p className="text-slate-400 mt-2">{repoData.repository.description}</p>
                       )}
@@ -686,7 +686,7 @@ export default function Home() {
                           href={repoData.repository.html_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-purple-400 hover:text-purple-300 transition-colors hover:cursor-pointer"
+                          className="text-yellow-200 hover:text-yellow-100 transition-colors hover:cursor-pointer"
                         >
                           View Repository →
                         </a>
@@ -698,25 +698,25 @@ export default function Home() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-emerald-400 mb-2">
+                    <div className="text-3xl font-bold text-yellow-200 mb-2">
                       {repoData.stats.totalCommits}
                     </div>
                     <div className="text-slate-400 text-sm">Total Commits</div>
                   </div>
                   <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-yellow-400 mb-2">
+                    <div className="text-3xl font-bold text-yellow-200 mb-2">
                       {repoData.stats.totalContributors}
                     </div>
                     <div className="text-slate-400 text-sm">Contributors</div>
                   </div>
                   <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-blue-400 mb-2">
+                    <div className="text-3xl font-bold text-yellow-200 mb-2">
                       {repoData.stats.topLanguage}
                     </div>
                     <div className="text-slate-400 text-sm">Top Language</div>
                   </div>
                   <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-purple-400 mb-2">
+                    <div className="text-3xl font-bold text-yellow-200 mb-2">
                       {Math.round(repoData.repository.size / 1024)} MB
                     </div>
                     <div className="text-slate-400 text-sm">Repository Size</div>
@@ -734,14 +734,14 @@ export default function Home() {
                           <div key={lang.language} className="flex items-center justify-between">
                             <span className="text-slate-300">{lang.language}</span>
                             <div className="flex items-center gap-2">
-                              <div className="w-24 bg-slate-700 rounded-full h-2 overflow-hidden">
-                                <div
-                                  className="bg-gradient-to-r from-purple-400 to-pink-400 h-2 rounded-full"
-                                  style={{
-                                    width: `${lang.percentage}%`
-                                  }}
-                                ></div>
-                              </div>
+                            <div className="w-24 bg-slate-700 rounded-full h-2 overflow-hidden">
+                              <div
+                                className="bg-yellow-200 h-2 rounded-full"
+                                style={{
+                                  width: `${lang.percentage}%`
+                                }}
+                              ></div>
+                            </div>
                               <span className="text-slate-400 text-sm w-12">{lang.percentage}%</span>
                             </div>
                           </div>
@@ -800,13 +800,13 @@ export default function Home() {
                     {/* Team Dynamics & Project Health */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                        <h4 className="text-xl font-bold text-emerald-400 mb-3">Team Dynamics</h4>
+                        <h4 className="text-xl font-bold text-yellow-200 mb-3">Team Dynamics</h4>
                         <p className="text-slate-300 text-sm leading-relaxed">
                           {repoData.aiInsights.teamDynamics}
                         </p>
                       </div>
                       <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                        <h4 className="text-xl font-bold text-blue-400 mb-3">Project Health</h4>
+                        <h4 className="text-xl font-bold text-yellow-200 mb-3">Project Health</h4>
                         <p className="text-slate-300 text-sm leading-relaxed">
                           {repoData.aiInsights.projectHealth}
                         </p>
@@ -815,7 +815,7 @@ export default function Home() {
 
                     {/* Contributor Personalities */}
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                      <h4 className="text-xl font-bold text-purple-400 mb-4">Contributor Personalities</h4>
+                      <h4 className="text-xl font-bold text-yellow-200 mb-4">Contributor Personalities</h4>
                       <div className="space-y-6">
                         {repoData.aiInsights.contributorPersonalities.map((personality, index) => (
                           <div key={personality.user.login} className="bg-slate-800 rounded-lg p-4 border border-slate-600">
@@ -823,41 +823,41 @@ export default function Home() {
                               <img
                                 src={personality.user.avatar_url}
                                 alt={personality.user.login}
-                                className="w-12 h-12 rounded-full border-2 border-purple-400 flex-shrink-0"
+                                className="w-12 h-12 rounded-full border-2 border-yellow-200 flex-shrink-0"
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
                                   <h5 className="text-lg font-semibold text-white">
                                     {personality.user.login}
                                   </h5>
-                                  <span className="px-2 py-1 bg-purple-400/20 text-purple-300 text-xs rounded-full">
+                                  <span className="px-2 py-1 bg-yellow-200/20 text-yellow-200 text-xs rounded-full">
                                     {personality.workPattern}
                                   </span>
                                 </div>
                                 
                                 <div className="space-y-3">
                                   <div>
-                                    <span className="text-sm font-medium text-emerald-400">Working Style: </span>
+                                    <span className="text-sm font-medium text-yellow-200">Working Style: </span>
                                     <span className="text-sm text-slate-300">{personality.workingStyle}</span>
                                   </div>
                                   
                                   <div>
-                                    <span className="text-sm font-medium text-blue-400">Personality: </span>
+                                    <span className="text-sm font-medium text-yellow-200">Personality: </span>
                                     <span className="text-sm text-slate-300">{personality.personality}</span>
                                   </div>
                                   
                                   <div>
-                                    <span className="text-sm font-medium text-yellow-400">Collaboration: </span>
+                                    <span className="text-sm font-medium text-yellow-200">Collaboration: </span>
                                     <span className="text-sm text-slate-300">{personality.collaborationStyle}</span>
                                   </div>
                                   
                                   <div>
-                                    <span className="text-sm font-medium text-pink-400">Strengths: </span>
+                                    <span className="text-sm font-medium text-yellow-200">Strengths: </span>
                                     <div className="flex flex-wrap gap-1 mt-1">
                                       {personality.strengths.map((strength, idx) => (
                                         <span
                                           key={idx}
-                                          className="px-2 py-1 bg-pink-400/20 text-pink-300 text-xs rounded-full"
+                                          className="px-2 py-1 bg-yellow-200/20 text-yellow-200 text-xs rounded-full"
                                         >
                                           {strength}
                                         </span>
@@ -878,7 +878,7 @@ export default function Home() {
                       🤖 AI Team Analysis
                     </h3>
                     <div className="bg-slate-900 rounded-xl p-8 border border-slate-700 text-center">
-                      <div className="animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <div className="animate-spin w-8 h-8 border-4 border-yellow-200 border-t-transparent rounded-full mx-auto mb-4"></div>
                       <p className="text-slate-300 text-sm">
                         AI is analyzing contributor patterns and team dynamics...
                       </p>

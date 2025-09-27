@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Play, Pause, ArrowUp, Music } from "lucide-react";
 
 interface Song {
@@ -32,6 +32,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [recentlyUpvoted, setRecentlyUpvoted] = useState<Set<string>>(new Set());
+  const [rankingChanges, setRankingChanges] = useState<Set<string>>(new Set());
+  const [rankingDirections, setRankingDirections] = useState<{[key: string]: 'up' | 'down'}>({});
+  const previousRankingsRef = useRef<{[key: string]: number}>({});
 
   // Fetch songs on component mount
   useEffect(() => {
@@ -47,6 +51,43 @@ export default function Home() {
       }
     };
   }, [currentAudio]);
+
+  // Track ranking changes and trigger animations
+  useEffect(() => {
+    if (songs.length === 0) return;
+
+    const sortedSongs = [...songs].sort((a, b) => b.upvote_count - a.upvote_count);
+    const currentRankings: {[key: string]: number} = {};
+    const changedSongs = new Set<string>();
+    const newDirections: {[key: string]: 'up' | 'down'} = {};
+    const previousRankings = previousRankingsRef.current;
+
+    sortedSongs.forEach((song, index) => {
+      currentRankings[song.id] = index;
+      
+      // Check if this song's ranking changed
+      if (previousRankings[song.id] !== undefined && previousRankings[song.id] !== index) {
+        changedSongs.add(song.id);
+        // Determine direction (lower index = higher rank = moved up)
+        newDirections[song.id] = previousRankings[song.id] > index ? 'up' : 'down';
+      }
+    });
+
+    // Update rankings and trigger animations for changed songs
+    if (Object.keys(previousRankings).length > 0 && changedSongs.size > 0) {
+      setRankingChanges(changedSongs);
+      setRankingDirections(newDirections);
+      
+      // Clear animation state after animation completes
+      setTimeout(() => {
+        setRankingChanges(new Set());
+        setRankingDirections({});
+      }, 800);
+    }
+
+    // Update the ref with current rankings
+    previousRankingsRef.current = currentRankings;
+  }, [songs]); // Only depend on songs, not previousRankings
 
   const fetchSongs = async () => {
     try {
@@ -144,28 +185,34 @@ export default function Home() {
   };
 
   const handleUpvote = async (id: string) => {
-    try {
-      const response = await fetch(`/api/songs/${id}/upvote`, {
-        method: 'POST',
+    // Add visual feedback immediately
+    setRecentlyUpvoted(prev => new Set(prev).add(id));
+    
+    // Remove visual feedback after animation
+    setTimeout(() => {
+      setRecentlyUpvoted(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
       });
+    }, 600);
 
-      const data = await response.json();
-      
-      if (data.success) {
-        // Update the song's upvote count in the local state
-        setSongs(songs.map(song => 
-          song.id === id 
-            ? { ...song, upvote_count: data.upvote_count }
-            : song
-        ));
-      } else {
-        console.error('Failed to upvote song:', data.error);
-        alert('Failed to upvote song. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error upvoting song:', error);
-      alert('Error upvoting song. Please try again.');
-    }
+    // Update UI immediately - this is the only UI update
+    setSongs(prevSongs => 
+      prevSongs.map(song => 
+        song.id === id 
+          ? { ...song, upvote_count: song.upvote_count + 1 }
+          : song
+      )
+    );
+
+    // Update database in background (fire and forget)
+    fetch(`/api/songs/${id}/upvote`, {
+      method: 'POST',
+    }).catch(error => {
+      // Silent error - don't revert UI, just log
+      console.error('Background upvote failed:', error);
+    });
   };
 
   return (
@@ -253,16 +300,60 @@ export default function Home() {
           ) : (
             <>
               {/* Leaderboard List */}
-              <div className="space-y-3">
-                {songs.map((song, index) => (
+              <div className="space-y-3 transition-all duration-300">
+                {songs
+                  .sort((a, b) => b.upvote_count - a.upvote_count) // Sort by upvotes descending
+                  .map((song, index) => (
                   <div
                     key={song.id}
-                    className="bg-[#1C2530] p-4 rounded-lg hover:bg-slate-800 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/20 shadow-[0_0_25px_rgba(16,185,129,0.1)] border border-slate-600 hover:border-emerald-500/30"
+                    className={`p-4 rounded-lg transition-all duration-500 hover:shadow-xl transform ${
+                      rankingChanges.has(song.id) 
+                        ? 'animate-pulse scale-105 ring-2 ring-emerald-400/50' // Animation for ranking change
+                        : ''
+                    } ${
+                      index === 0 
+                        ? 'bg-gradient-to-r from-yellow-900/30 to-[#1C2530] border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]' // 1st place
+                        : index === 1
+                        ? 'bg-gradient-to-r from-gray-800/30 to-[#1C2530] border-gray-400/50 shadow-[0_0_25px_rgba(156,163,175,0.15)]' // 2nd place
+                        : index === 2  
+                        ? 'bg-gradient-to-r from-amber-900/30 to-[#1C2530] border-amber-600/50 shadow-[0_0_25px_rgba(217,119,6,0.15)]' // 3rd place
+                        : 'bg-[#1C2530] hover:bg-slate-800 border-slate-600 hover:border-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.1)]' // Other ranks
+                    } hover:shadow-emerald-500/20 border`}
+                    style={{
+                      transitionProperty: 'all, transform, box-shadow',
+                      transitionDuration: '800ms',
+                      transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
                   >
                     <div className="flex items-center">
                       {/* Rank */}
-                      <div className="w-8 h-8 text-white rounded-lg flex items-center justify-center text-sm font-bold">
-                        {index + 1}
+                      <div className="relative">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-500 ${
+                          rankingChanges.has(song.id) 
+                            ? 'animate-bounce scale-125' // Extra animation for rank change
+                            : ''
+                        } ${
+                          index === 0 
+                            ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' // 1st place
+                            : index === 1
+                            ? 'bg-gray-400 text-black shadow-lg shadow-gray-400/50' // 2nd place  
+                            : index === 2
+                            ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/50' // 3rd place
+                            : 'text-white' // Other ranks
+                        }`}>
+                          {index + 1}
+                        </div>
+                        
+                        {/* Ranking direction indicator */}
+                        {rankingChanges.has(song.id) && rankingDirections[song.id] && (
+                          <div className={`absolute -top-2 -right-2 w-4 h-4 rounded-full flex items-center justify-center text-xs animate-ping ${
+                            rankingDirections[song.id] === 'up' 
+                              ? 'bg-green-500 text-white' 
+                              : 'bg-red-500 text-white'
+                          }`}>
+                            {rankingDirections[song.id] === 'up' ? '↑' : '↓'}
+                          </div>
+                        )}
                       </div>
 
                       {/* Song info */}
@@ -295,7 +386,11 @@ export default function Home() {
                       {/* Stats */}
                       <div className="flex items-center gap-8 ml-8 min-w-[200px]">
                         <div className="text-center">
-                          <div className="text-lg font-bold text-white hover:text-violet-300 transition-colors drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]">{song.upvote_count}</div>
+                          <div className={`text-lg font-bold text-white hover:text-violet-300 transition-all duration-300 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] ${
+                            recentlyUpvoted.has(song.id) ? 'scale-125 text-violet-300' : ''
+                          }`}>
+                            {song.upvote_count}
+                          </div>
                           <div className="text-xs text-slate-400">upvotes</div>
                         </div>
                         <div className="text-center">
@@ -335,9 +430,13 @@ export default function Home() {
                       {/* Upvote button */}
                       <button
                         onClick={() => handleUpvote(song.id)}
-                        className="w-10 h-10 bg-emerald-300 text-black rounded-md hover:bg-violet-400 hover:scale-105 transition-all duration-300 flex items-center justify-center hover:shadow-lg hover:shadow-violet-500/50 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                        className={`w-10 h-10 text-black rounded-md transition-all duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] ${
+                          recentlyUpvoted.has(song.id)
+                            ? 'bg-violet-400 scale-110 shadow-lg shadow-violet-500/50 animate-pulse'
+                            : 'bg-emerald-300 hover:bg-violet-400 hover:scale-105 hover:shadow-lg hover:shadow-violet-500/50'
+                        }`}
                       >
-                        <ArrowUp size={16} />
+                        <ArrowUp size={16} className={recentlyUpvoted.has(song.id) ? 'animate-bounce' : ''} />
                       </button>
 
                     </div>

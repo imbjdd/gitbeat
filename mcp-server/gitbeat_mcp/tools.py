@@ -181,13 +181,75 @@ def format_audio_response(result: Dict[str, Any]) -> List[TextContent]:
                 text=response_text
             )
         ]
-    else:
-        return [
-            TextContent(
-                type="text", 
-                text=f"❌ Audio generation failed: {result.get('error', 'Unknown error')}"
+
+
+async def handle_tool_call(tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    """Handle tool calls for direct MCP JSON-RPC endpoint"""
+    try:
+        if tool_name == "generate_music":
+            from .elevenlabs_service import ElevenLabsService
+            
+            api_key = arguments.get("elevenlabs_api_key")
+            if not api_key:
+                return {"error": "ElevenLabs API key is required"}
+            
+            service = ElevenLabsService(api_key=api_key)
+            result = await service.generate_music(
+                prompt=arguments.get("prompt"),
+                duration_seconds=arguments.get("duration_seconds"),
+                prompt_influence=arguments.get("prompt_influence")
             )
-        ]
+            
+            return {"content": format_audio_response(result)}
+            
+        elif tool_name == "generate_sound_effect":
+            from .elevenlabs_service import ElevenLabsService
+            
+            api_key = arguments.get("elevenlabs_api_key")
+            if not api_key:
+                return {"error": "ElevenLabs API key is required"}
+            
+            service = ElevenLabsService(api_key=api_key)
+            result = await service.generate_sound_effect(
+                prompt=arguments.get("prompt"),
+                duration_seconds=arguments.get("duration_seconds")
+            )
+            
+            return {"content": format_audio_response(result)}
+            
+        elif tool_name == "test_elevenlabs_connection":
+            from .elevenlabs_service import ElevenLabsService
+            
+            api_key = arguments.get("elevenlabs_api_key")
+            if not api_key:
+                return {"error": "ElevenLabs API key is required"}
+            
+            service = ElevenLabsService(api_key=api_key)
+            result = await service.test_connection()
+            
+            return {"content": format_connection_test_response(result)}
+            
+        elif tool_name == "get_available_models":
+            from .elevenlabs_service import ElevenLabsService
+            
+            api_key = arguments.get("elevenlabs_api_key")
+            if not api_key:
+                return {"error": "ElevenLabs API key is required"}
+            
+            service = ElevenLabsService(api_key=api_key)
+            result = await service.get_available_models()
+            
+            return {"content": format_models_response(result)}
+            
+        elif tool_name == "get_music_examples":
+            result = {"success": True, "examples": "Music generation examples"}
+            return {"content": format_examples_response(result)}
+            
+        else:
+            return {"error": f"Unknown tool: {tool_name}"}
+            
+    except Exception as e:
+        return {"error": f"Tool execution failed: {str(e)}"}
 
 
 def format_connection_test_response(result: Dict[str, Any]) -> List[TextContent]:

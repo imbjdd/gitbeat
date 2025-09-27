@@ -1,42 +1,50 @@
 # 🎵 GitBeat MCP Server
 
-A simple HTTP API for music generation using ElevenLabs. Users provide their own ElevenLabs API key.
+A Model Context Protocol (MCP) server for music generation using ElevenLabs API. Users provide their own ElevenLabs API key.
 
-**🔗 Live API**: https://mcp-server-aik6nfog8-ykzou1214-4122s-projects.vercel.app
+**🔗 Live MCP Server**: https://mcp-server-ten-kappa.vercel.app/mcp
 
 ## 🚀 Quick Start
 
-### Generate Music
+### MCP Protocol Usage
+
+This server implements the Model Context Protocol (MCP) 2024-11-05. Use it with MCP-compatible clients:
+
+**MCP Endpoint**: `https://mcp-server-ten-kappa.vercel.app/mcp`
+
+### Available Tools
+
+1. **generate_music** - Generate music from text prompts
+2. **generate_sound_effect** - Generate sound effects from text prompts
+
+### Example MCP Request
+
 ```bash
-curl -X POST "https://mcp-server-aik6nfog8-ykzou1214-4122s-projects.vercel.app/generate-music" \
+curl -X POST "https://mcp-server-ten-kappa.vercel.app/mcp" \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "A cheerful upbeat electronic dance music track",
-    "duration_seconds": 10,
-    "elevenlabs_api_key": "sk_your_api_key_here"
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "generate_music",
+      "arguments": {
+        "prompt": "A cheerful upbeat electronic dance music track",
+        "duration_seconds": 15,
+        "elevenlabs_api_key": "sk_your_api_key_here"
+      }
+    }
   }'
 ```
 
-### Generate Sound Effect
-```bash
-curl -X POST "https://mcp-server-aik6nfog8-ykzou1214-4122s-projects.vercel.app/generate-sound" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Gentle rain falling on leaves",
-    "duration_seconds": 5,
-    "elevenlabs_api_key": "sk_your_api_key_here"
-  }'
-```
+## 📡 MCP Endpoints
 
-## 📡 API Endpoints
-
-- `GET /` - API information
+- `GET /` - Server information
 - `GET /health` - Health check
-- `GET /examples` - Get example prompts (no API key needed)
-- `POST /generate-music` - Generate music
-- `POST /generate-sound` - Generate sound effects  
-- `POST /test-connection` - Test your ElevenLabs API key
-- `POST /models` - Get available ElevenLabs models
+- `POST /mcp` - MCP JSON-RPC endpoint
+  - `initialize` - Initialize MCP connection
+  - `tools/list` - List available tools
+  - `tools/call` - Call a specific tool
 
 ## 🔑 Requirements
 

@@ -1,22 +1,29 @@
+#!/usr/bin/env python3
 """
-Standalone HTTP API for GitBeat Music Generation - Vercel deployment
-No MCP dependencies - pure FastAPI implementation
+GitBeat MCP Server with SSE (Server-Sent Events) support
+This allows the MCP server to be accessed over HTTP/SSE instead of just stdio
 """
 
 import asyncio
 import json
 import logging
-import httpx
-import base64
-from typing import Any, Dict, List, Optional
-from datetime import datetime
-import uuid
+import sys
 import os
+from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException, Request
+# Add the current directory to Python path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+
+# Import our MCP tools (without MCP dependencies for Vercel)
+try:
+    from gitbeat_mcp.tools import get_tool_definitions, handle_tool_call
+    TOOLS_AVAILABLE = True
+except ImportError:
+    TOOLS_AVAILABLE = False
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -24,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="GitBeat Music Generation API",
-    description="Generate music and sound effects using ElevenLabs API",
+    title="GitBeat MCP Server (SSE)",
+    description="MCP Server with Server-Sent Events support for remote access",
     version="0.1.0"
 )
 
@@ -38,430 +45,324 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pydantic models
-class MusicGenerationRequest(BaseModel):
-    """Request model for music generation"""
-    prompt: str = Field(..., min_length=1, max_length=1000)
-    duration_seconds: Optional[int] = Field(default=10, ge=1, le=30)
-    prompt_influence: Optional[float] = Field(default=0.3, ge=0.0, le=1.0)
-    composition_mode: Optional[bool] = Field(default=False, description="Enable composition mode for structured music")
-    genre: Optional[str] = Field(default=None, description="Music genre (pop, rock, jazz, etc.)")
-    mood: Optional[str] = Field(default=None, description="Music mood (happy, sad, energetic, calm, etc.)")
-    tempo: Optional[str] = Field(default=None, description="Tempo (slow, medium, fast, upbeat)")
-    instruments: Optional[List[str]] = Field(default=None, description="Specific instruments to include")
-    elevenlabs_api_key: str = Field(..., min_length=1, description="Your ElevenLabs API key")
-
-class SoundEffectRequest(BaseModel):
-    """Request model for sound effect generation"""
-    prompt: str = Field(..., min_length=1, max_length=500)
-    duration_seconds: Optional[int] = Field(default=5, ge=1, le=15)
-    elevenlabs_api_key: str = Field(..., min_length=1, description="Your ElevenLabs API key")
-
-class APIKeyRequest(BaseModel):
-    """Request model for API key operations"""
-    elevenlabs_api_key: str = Field(..., min_length=1, description="Your ElevenLabs API key")
-
-# ElevenLabs Service
-class ElevenLabsService:
-    """Service for interacting with ElevenLabs API"""
-    
-    def __init__(self, api_key: str):
-        self.base_url = "https://api.elevenlabs.io"
-        self.api_key = api_key
-        
-        if not self.api_key:
-            raise ValueError("ElevenLabs API key is required")
-    
-    def _get_headers(self) -> Dict[str, str]:
-        """Get headers for ElevenLabs API requests"""
-        return {
-            "xi-api-key": self.api_key,
-            "Content-Type": "application/json"
-        }
-    
-    async def test_connection(self) -> Dict[str, Any]:
-        """Test ElevenLabs API connection"""
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(
-                    f"{self.base_url}/v1/models",
-                    headers=self._get_headers(),
-                    timeout=10.0
-                )
-                
-                if response.status_code == 200:
-                    return {"success": True, "message": "Connection successful"}
-                else:
-                    return {
-                        "success": False, 
-                        "message": f"API test failed: {response.status_code}"
-                    }
-                    
-            except Exception as e:
-                logger.error(f"Connection test failed: {e}")
-                return {"success": False, "message": f"Connection error: {str(e)}"}
-    
-    async def generate_music(
-        self,
-        prompt: str,
-        duration_seconds: int = 10,
-        prompt_influence: float = 0.3,
-        composition_mode: bool = False,
-        genre: Optional[str] = None,
-        mood: Optional[str] = None,
-        tempo: Optional[str] = None,
-        instruments: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
-        """Generate music from text prompt and return base64 encoded audio"""
-        
-        logger.info(f"Generating music: '{prompt}' ({duration_seconds}s)")
-        
-        request_data = {
-            "prompt": prompt,
-            "music_length_ms": duration_seconds * 1000  # Convert seconds to milliseconds
-        }
-        
-        # Add composition mode parameters if enabled
-        if composition_mode:
-            request_data["composition_mode"] = True
-            
-            # Build style settings
-            style_settings = {}
-            if genre:
-                style_settings["genre"] = genre
-            if mood:
-                style_settings["mood"] = mood
-            if tempo:
-                style_settings["tempo"] = tempo
-            if instruments:
-                style_settings["instruments"] = instruments
-                
-            if style_settings:
-                request_data["style_settings"] = style_settings
-        
-        async with httpx.AsyncClient() as client:
-            try:
-                # Generate music using detailed endpoint
-                logger.info("Generating music with detailed endpoint...")
-                response = await client.post(
-                    f"{self.base_url}/v1/music/detailed",
-                    headers=self._get_headers(),
-                    json=request_data,
-                    timeout=60.0
-                )
-                
-                if response.status_code == 200:
-                    try:
-                        # Try to parse JSON response from detailed endpoint
-                        response_data = response.json()
-                        
-                        # Extract audio data from JSON response
-                        audio_data = response_data.get("audio", b"")
-                        if isinstance(audio_data, str):
-                            # If it's base64 encoded string
-                            audio_base64 = audio_data
-                        else:
-                            # If it's binary data, encode it
-                            audio_base64 = base64.b64encode(audio_data).decode('utf-8')
-                        
-                        # Extract lyrics and metadata from detailed response
-                        composition_plan = response_data.get("composition_plan", {})
-                        song_metadata = response_data.get("song_metadata", {})
-                        
-                        # Extract lyrics from composition plan if available
-                        lyrics = ""
-                        if composition_plan:
-                            sections = composition_plan.get("sections", [])
-                            for section in sections:
-                                lines = section.get("lines", [])
-                                if lines:
-                                    section_name = section.get("section_name", "")
-                                    if section_name:
-                                        lyrics += f"[{section_name}]\n"
-                                    lyrics += "\n".join(lines) + "\n\n"
-                        
-                        logger.info(f"✅ Music generated with JSON response, lyrics: {len(lyrics)} chars")
-                        
-                    except (json.JSONDecodeError, UnicodeDecodeError):
-                        # Fallback: treat as binary audio
-                        logger.warning("Detailed endpoint returned binary, treating as audio file")
-                        audio_data = response.content
-                        audio_base64 = base64.b64encode(audio_data).decode('utf-8')
-                        lyrics = ""
-                        composition_plan = {}
-                        song_metadata = {}
-                    
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    unique_id = str(uuid.uuid4())[:8]
-                    filename = f"music_{timestamp}_{unique_id}.mp3"
-                    
-                    logger.info(f"✅ Music generated: {filename} with lyrics: {bool(lyrics)}")
-                    
-                    return {
-                        "success": True,
-                        "audio_base64": audio_base64,
-                        "filename": filename,
-                        "file_size": len(base64.b64decode(audio_base64)) if audio_base64 else 0,
-                        "duration_seconds": duration_seconds,
-                        "prompt": prompt,
-                        "mime_type": "audio/mpeg",
-                        "lyrics": lyrics,
-                        "composition_plan": composition_plan,
-                        "song_metadata": song_metadata
-                    }
-                else:
-                    error_msg = f"Music generation failed: HTTP {response.status_code}"
-                    try:
-                        error_detail = response.json()
-                        error_msg += f" - {error_detail}"
-                    except:
-                        error_msg += f" - {response.text}"
-                    
-                    logger.error(error_msg)
-                    return {"success": False, "error": error_msg}
-                    
-            except Exception as e:
-                logger.error(f"Error generating music: {e}")
-                return {"success": False, "error": str(e)}
-    
-    async def generate_sound_effect(
-        self,
-        prompt: str,
-        duration_seconds: int = 5
-    ) -> Dict[str, Any]:
-        """Generate sound effect from text prompt and return base64 encoded audio"""
-        
-        logger.info(f"Generating sound effect: '{prompt}' ({duration_seconds}s)")
-        
-        request_data = {
-            "text": prompt,
-            "duration_seconds": duration_seconds
-        }
-        
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    f"{self.base_url}/v1/sound-generation",
-                    headers=self._get_headers(),
-                    json=request_data,
-                    timeout=60.0
-                )
-                
-                if response.status_code == 200:
-                    audio_data = response.content
-                    audio_base64 = base64.b64encode(audio_data).decode('utf-8')
-                    
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    unique_id = str(uuid.uuid4())[:8]
-                    filename = f"sound_{timestamp}_{unique_id}.mp3"
-                    
-                    logger.info(f"✅ Sound effect generated: {filename} ({len(audio_data)} bytes)")
-                    
-                    return {
-                        "success": True,
-                        "audio_base64": audio_base64,
-                        "filename": filename,
-                        "file_size": len(audio_data),
-                        "duration_seconds": duration_seconds,
-                        "prompt": prompt,
-                        "mime_type": "audio/mpeg"
-                    }
-                else:
-                    error_msg = f"Sound generation failed: HTTP {response.status_code}"
-                    try:
-                        error_detail = response.json()
-                        error_msg += f" - {error_detail}"
-                    except:
-                        error_msg += f" - {response.text}"
-                    
-                    logger.error(error_msg)
-                    return {"success": False, "error": error_msg}
-                    
-            except Exception as e:
-                logger.error(f"Error generating sound effect: {e}")
-                return {"success": False, "error": str(e)}
-    
-    async def get_available_models(self) -> Dict[str, Any]:
-        """Get available models from ElevenLabs"""
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(
-                    f"{self.base_url}/v1/models",
-                    headers=self._get_headers(),
-                    timeout=10.0
-                )
-                
-                if response.status_code == 200:
-                    models_data = response.json()
-                    models_list = models_data if isinstance(models_data, list) else models_data.get('models', [])
-                    
-                    logger.info(f"Retrieved {len(models_list)} models")
-                    return {"success": True, "models": models_list}
-                else:
-                    logger.error(f"Failed to get models: {response.status_code}")
-                    return {"success": False, "error": f"HTTP {response.status_code}"}
-                    
-            except Exception as e:
-                logger.error(f"Error getting models: {e}")
-                return {"success": False, "error": str(e)}
-
-# Routes
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Root endpoint with MCP server information"""
     return {
-        "message": "GitBeat Music Generation API",
+        "name": "GitBeat MCP Server",
         "version": "0.1.0",
-        "description": "Generate music with lyrics and sound effects using your ElevenLabs API key",
+        "protocol": "MCP 2024-11-05",
+        "protocolVersion": "2024-11-05",
+        "description": "Music generation server using ElevenLabs API",
+        "tools": [
+            "generate_music",
+            "generate_sound_effect", 
+            "test_elevenlabs_connection",
+            "get_available_models",
+            "get_music_examples"
+        ],
+        "status": "healthy",
         "endpoints": {
-            "generate_music": "POST /generate-music",
-            "generate_sound": "POST /generate-sound",
-            "test_connection": "POST /test-connection",
-            "models": "POST /models",
-            "examples": "GET /examples"
-        },
-        "note": "All endpoints require your own ElevenLabs API key"
+            "mcp": "/mcp",
+            "health": "/health"
+        }
     }
 
 @app.get("/health")
-async def health_check():
+async def health():
     """Health check endpoint"""
-    return {"status": "healthy", "service": "gitbeat-music-api"}
+    return {"status": "healthy", "service": "gitbeat-mcp-sse"}
 
-@app.post("/generate-music")
-async def generate_music_endpoint(request: MusicGenerationRequest):
-    """Generate music from text prompt"""
-    try:
-        service = ElevenLabsService(api_key=request.elevenlabs_api_key)
-        result = await service.generate_music(
-            prompt=request.prompt,
-            duration_seconds=request.duration_seconds,
-            prompt_influence=request.prompt_influence,
-            composition_mode=request.composition_mode,
-            genre=request.genre,
-            mood=request.mood,
-            tempo=request.tempo,
-            instruments=request.instruments
-        )
-        return result
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error generating music: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/generate-sound")
-async def generate_sound_endpoint(request: SoundEffectRequest):
-    """Generate sound effect from text prompt"""
-    try:
-        service = ElevenLabsService(api_key=request.elevenlabs_api_key)
-        result = await service.generate_sound_effect(
-            prompt=request.prompt,
-            duration_seconds=request.duration_seconds
-        )
-        return result
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error generating sound: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/test-connection")
-async def test_connection_endpoint(request: APIKeyRequest):
-    """Test ElevenLabs API connection"""
-    try:
-        service = ElevenLabsService(api_key=request.elevenlabs_api_key)
-        result = await service.test_connection()
-        return result
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error testing connection: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/models")
-async def get_models_endpoint(request: APIKeyRequest):
-    """Get available ElevenLabs models"""
-    try:
-        service = ElevenLabsService(api_key=request.elevenlabs_api_key)
-        result = await service.get_available_models()
-        return result
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.error(f"Error getting models: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/examples")
-async def get_examples_endpoint():
-    """Get example prompts (no API key required)"""
-    examples = {
-        "basic_music_examples": [
-            "A cheerful upbeat electronic dance music track with synthesizers",
-            "Relaxing ambient music with soft piano and nature sounds",
-            "Energetic rock guitar riff with drums",
-            "Classical orchestral piece with strings and woodwinds",
-            "Jazz saxophone melody with walking bass line"
-        ],
-        "composition_mode_examples": [
-            {
-                "prompt": "A romantic love song with heartfelt lyrics",
-                "composition_mode": True,
-                "genre": "pop",
-                "mood": "romantic",
-                "tempo": "slow",
-                "instruments": ["piano", "strings", "soft_drums"]
-            },
-            {
-                "prompt": "An energetic workout anthem with motivational vibes",
-                "composition_mode": True,
-                "genre": "electronic",
-                "mood": "energetic",
-                "tempo": "fast",
-                "instruments": ["synthesizer", "bass", "drums"]
-            },
-            {
-                "prompt": "A melancholic indie song about lost memories",
-                "composition_mode": True,
-                "genre": "indie",
-                "mood": "melancholic",
-                "tempo": "medium",
-                "instruments": ["acoustic_guitar", "violin", "soft_vocals"]
+@app.get("/sse")
+async def sse_endpoint(request: Request):
+    """SSE endpoint for MCP communication"""
+    
+    async def event_stream():
+        try:
+            # Send MCP server capabilities on connection
+            capabilities = {
+                "jsonrpc": "2.0",
+                "id": "server-init",
+                "method": "initialize",
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {}
+                    },
+                    "serverInfo": {
+                        "name": "GitBeat MCP Server",
+                        "version": "0.1.0"
+                    }
+                }
             }
-        ],
-        "sound_effect_examples": [
-            "Gentle rain falling on leaves",
-            "Ocean waves crashing on the shore",
-            "Birds chirping in a forest",
-            "Crackling campfire",
-            "Thunder and lightning storm"
-        ],
-        "usage_tips": {
-            "basic_mode": "Simple text prompts work great for quick music generation",
-            "composition_mode": "Enable for more structured, professional-quality music with specific genre, mood, and instrument control",
-            "prompt_influence": "Higher values (0.7-1.0) follow your prompt more closely, lower values (0.1-0.3) allow more creative freedom",
-            "duration": "Longer durations (20-30s) work better with composition mode for complete musical phrases",
-            "lyrics": "The API now returns lyrics in the response when applicable - check the 'lyrics' field in the result",
-            "metadata": "Full composition plan and song metadata are included in the response for detailed analysis"
+            yield f"data: {json.dumps(capabilities)}\n\n"
+            
+            # Send tools list
+            if TOOLS_AVAILABLE:
+                tools = get_tool_definitions()
+                tools_message = {
+                    "jsonrpc": "2.0",
+                    "id": "tools-list",
+                    "method": "tools/list",
+                    "result": {
+                        "tools": [
+                            {
+                                "name": tool.name,
+                                "description": tool.description,
+                                "inputSchema": tool.inputSchema
+                            } for tool in tools
+                        ]
+                    }
+                }
+            else:
+                tools_message = {
+                    "jsonrpc": "2.0",
+                    "id": "tools-list", 
+                    "method": "tools/list",
+                    "result": {
+                        "tools": [
+                            {
+                                "name": "generate_music",
+                                "description": "Generate music from a text prompt using ElevenLabs AI",
+                                "inputSchema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "prompt": {"type": "string", "description": "Music description"},
+                                        "elevenlabs_api_key": {"type": "string", "description": "ElevenLabs API key"}
+                                    },
+                                    "required": ["prompt", "elevenlabs_api_key"]
+                                }
+                            }
+                        ]
+                    }
+                }
+            
+            yield f"data: {json.dumps(tools_message)}\n\n"
+            
+            # Keep connection alive with periodic pings
+            while not await request.is_disconnected():
+                try:
+                    ping_message = {
+                        "jsonrpc": "2.0",
+                        "method": "notifications/ping",
+                        "params": {"timestamp": asyncio.get_event_loop().time()}
+                    }
+                    yield f"data: {json.dumps(ping_message)}\n\n"
+                    await asyncio.sleep(30)  # Ping every 30 seconds
+                except Exception as e:
+                    logger.error(f"SSE error: {e}")
+                    break
+                    
+        except Exception as e:
+            logger.error(f"SSE stream error: {e}")
+            error_message = {
+                "jsonrpc": "2.0",
+                "error": {
+                    "code": -32603,
+                    "message": str(e)
+                }
+            }
+            yield f"data: {json.dumps(error_message)}\n\n"
+    
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Cache-Control"
         }
-    }
-    return {"success": True, "examples": examples}
-
-# Global exception handler
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler"""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error", "error": str(exc)}
     )
 
-# For Vercel deployment
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.post("/mcp")
+async def mcp_endpoint(request: Request):
+    """MCP JSON-RPC endpoint"""
+    try:
+        data = await request.json()
+        
+        if data.get("method") == "initialize":
+            return {
+                "jsonrpc": "2.0",
+                "id": data.get("id"),
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "experimental": {},
+                        "prompts": {"listChanged": False},
+                        "resources": {"subscribe": False, "listChanged": False},
+                        "tools": {"listChanged": True}
+                    },
+                    "serverInfo": {
+                        "name": "GitBeat MCP Server",
+                        "version": "0.1.0"
+                    }
+                }
+            }
+        
+        elif data.get("method") == "tools/list":
+            if TOOLS_AVAILABLE:
+                tools = get_tool_definitions()
+                tools_list = []
+                for tool in tools:
+                    tools_list.append({
+                        "name": tool.name,
+                        "description": tool.description,
+                        "inputSchema": tool.inputSchema
+                    })
+            else:
+                tools_list = [
+                    {
+                        "name": "generate_music",
+                        "description": "Generate music from a text prompt using ElevenLabs AI",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "prompt": {
+                                    "type": "string",
+                                    "description": "Text description of the music to generate"
+                                },
+                                "duration_seconds": {
+                                    "type": "integer",
+                                    "description": "Duration of the music in seconds (10-30)",
+                                    "minimum": 10,
+                                    "maximum": 30,
+                                    "default": 15
+                                },
+                                "elevenlabs_api_key": {
+                                    "type": "string",
+                                    "description": "Your ElevenLabs API key"
+                                }
+                            },
+                            "required": ["prompt", "elevenlabs_api_key"]
+                        }
+                    },
+                    {
+                        "name": "generate_sound_effect",
+                        "description": "Generate sound effects from a text prompt using ElevenLabs AI",
+                        "inputSchema": {
+                            "type": "object",
+                            "properties": {
+                                "prompt": {
+                                    "type": "string",
+                                    "description": "Text description of the sound effect to generate"
+                                },
+                                "duration_seconds": {
+                                    "type": "integer",
+                                    "description": "Duration of the sound effect in seconds (1-15)",
+                                    "minimum": 1,
+                                    "maximum": 15,
+                                    "default": 5
+                                },
+                                "elevenlabs_api_key": {
+                                    "type": "string",
+                                    "description": "Your ElevenLabs API key"
+                                }
+                            },
+                            "required": ["prompt", "elevenlabs_api_key"]
+                        }
+                    }
+                ]
+            
+            return {
+                "jsonrpc": "2.0",
+                "id": data.get("id"),
+                "result": {
+                    "tools": tools_list
+                }
+            }
+        
+        elif data.get("method") == "tools/call":
+            tool_name = data.get("params", {}).get("name")
+            arguments = data.get("params", {}).get("arguments", {})
+            
+            if TOOLS_AVAILABLE:
+                result = await handle_tool_call(tool_name, arguments)
+                return {
+                    "jsonrpc": "2.0",
+                    "id": data.get("id"),
+                    "result": result
+                }
+            else:
+                # Fallback: direct API call
+                if tool_name == "generate_music":
+                    from gitbeat_mcp.elevenlabs_service import ElevenLabsService
+                    
+                    api_key = arguments.get("elevenlabs_api_key")
+                    if not api_key:
+                        return {
+                            "jsonrpc": "2.0",
+                            "id": data.get("id"),
+                            "result": {
+                                "content": [{"type": "text", "text": "❌ ElevenLabs API key is required"}]
+                            }
+                        }
+                    
+                    try:
+                        service = ElevenLabsService(api_key=api_key)
+                        result = await service.generate_music(
+                            prompt=arguments.get("prompt"),
+                            duration_seconds=arguments.get("duration_seconds", 15)
+                        )
+                        
+                        if result.get("success"):
+                            response_text = f"✅ Music generated successfully!\n\n"
+                            response_text += f"**🎵 Audio:** {result.get('filename')}\n"
+                            response_text += f"**⏱️ Duration:** {result.get('duration_seconds')} seconds\n"
+                            response_text += f"**📝 Prompt:** {result.get('prompt')}\n"
+                            response_text += f"**📊 File Size:** {result.get('file_size')} bytes\n"
+                            response_text += f"\n**🎵 Audio Data (Base64):**\n"
+                            response_text += f"```\n{result.get('audio_base64')}\n```"
+                        else:
+                            response_text = f"❌ Music generation failed: {result.get('error', 'Unknown error')}"
+                        
+                        return {
+                            "jsonrpc": "2.0",
+                            "id": data.get("id"),
+                            "result": {
+                                "content": [{"type": "text", "text": response_text}]
+                            }
+                        }
+                        
+                    except Exception as e:
+                        return {
+                            "jsonrpc": "2.0",
+                            "id": data.get("id"),
+                            "result": {
+                                "content": [{"type": "text", "text": f"❌ Error: {str(e)}"}]
+                            }
+                        }
+                
+                else:
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": data.get("id"),
+                        "error": {
+                            "code": -32601,
+                            "message": f"Unknown tool: {tool_name}"
+                        }
+                    }
+        
+        else:
+            return {
+                "jsonrpc": "2.0",
+                "id": data.get("id"),
+                "error": {
+                    "code": -32601,
+                    "message": f"Method not found: {data.get('method')}"
+                }
+            }
+            
+    except Exception as e:
+        logger.error(f"MCP endpoint error: {e}")
+        return {
+            "jsonrpc": "2.0",
+            "id": data.get("id") if 'data' in locals() else None,
+            "error": {
+                "code": -32603,
+                "message": f"Internal error: {str(e)}"
+            }
+        }
+
+# Export the app for Vercel
+# Vercel will automatically handle the ASGI server

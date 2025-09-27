@@ -133,7 +133,7 @@ export function useSunoPolling(options: UseSunoPollingOptions = {}) {
 
       await checkStatus(taskId);
     }, pollingInterval);
-  }, [isPolling, checkStatus, stopPolling, maxPollingTime, pollingInterval]);
+  }, [isPolling, checkStatus, stopPolling, maxPollingTime, pollingInterval, onError]);
 
   return {
     isPolling,

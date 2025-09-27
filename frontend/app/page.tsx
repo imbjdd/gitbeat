@@ -419,13 +419,7 @@ export default function Home() {
                         ? 'animate-pulse scale-105 ring-2 ring-emerald-400/50' // Animation for ranking change
                         : ''
                     } ${
-                      index === 0 
-                        ? 'bg-gradient-to-r from-yellow-900/30 to-[#1C2530] border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]' // 1st place
-                        : index === 1
-                        ? 'bg-gradient-to-r from-gray-800/30 to-[#1C2530] border-gray-400/50 shadow-[0_0_25px_rgba(156,163,175,0.15)]' // 2nd place
-                        : index === 2  
-                        ? 'bg-gradient-to-r from-amber-900/30 to-[#1C2530] border-amber-600/50 shadow-[0_0_25px_rgba(217,119,6,0.15)]' // 3rd place
-                        : 'bg-[#1C2530] hover:bg-slate-800 border-slate-600 hover:border-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.1)]' // Other ranks
+                        'bg-[#1C2530] hover:bg-slate-800 border-slate-600 hover:border-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.1)]' // Other ranks
                     } hover:shadow-emerald-500/20 border`}
                     style={{
                       transitionProperty: 'all, transform, box-shadow',
@@ -446,7 +440,7 @@ export default function Home() {
                             : index === 1
                             ? 'bg-gray-400 text-black shadow-lg shadow-gray-400/50' // 2nd place  
                             : index === 2
-                            ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/50' // 3rd place
+                            ? 'bg-amber-600 text-black shadow-lg shadow-amber-600/50' // 3rd place
                             : 'text-white' // Other ranks
                         }`}>
                     {index + 1}

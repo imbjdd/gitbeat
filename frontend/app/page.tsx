@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Play, Pause, ArrowUp, Music } from "lucide-react";
+import { analyzeGitHubRepository, RepositoryAnalysis } from "@/lib/github-analysis";
 
 interface Song {
   id: string;
@@ -39,6 +40,10 @@ export default function Home() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [activeTab, setActiveTab] = useState<'beats' | 'repo'>('beats');
+  const [githubRepoUrl, setGithubRepoUrl] = useState("");
+  const [repoData, setRepoData] = useState<RepositoryAnalysis | null>(null);
+  const [repoLoading, setRepoLoading] = useState(false);
 
   // Fetch songs on component mount
   useEffect(() => {
@@ -238,6 +243,23 @@ export default function Home() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Handle GitHub repository analysis
+  const handleRepoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!githubRepoUrl.trim()) return;
+    
+    setRepoLoading(true);
+    try {
+      const analysis = await analyzeGitHubRepository(githubRepoUrl.trim());
+      setRepoData(analysis);
+    } catch (error) {
+      console.error('Error analyzing repository:', error);
+      alert('Failed to analyze GitHub repository. Please check the URL.');
+    } finally {
+      setRepoLoading(false);
+    }
+  };
+
   const handleUpvote = async (id: string) => {
     // Add visual feedback immediately
     setRecentlyUpvoted(prev => new Set(prev).add(id));
@@ -277,65 +299,94 @@ export default function Home() {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent hover:from-orange-400 hover:to-fuchsia-400 transition-all duration-500 cursor-pointer drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]">gitbeat 🎧</h1>
         </div>
 
-        {/* Song Upload Section */}
+        {/* Tab Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-600">
+            <button
+              onClick={() => setActiveTab('beats')}
+              className={`px-6 py-2 rounded-md font-medium transition-all duration-300 hover:cursor-pointer ${
+                activeTab === 'beats'
+                  ? 'bg-emerald-300 text-black shadow-lg shadow-emerald-300/50'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              Beats
+            </button>
+            <button
+              onClick={() => setActiveTab('repo')}
+              className={`px-6 py-2 rounded-md font-medium transition-all duration-300 hover:cursor-pointer ${
+                activeTab === 'repo'
+                  ? 'bg-emerald-300 text-black shadow-lg shadow-emerald-300/50'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              Repository Analysis
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'beats' ? (
+          <>
+            {/* Song Upload Section */}
         <div className="my-24">
           <div className="text-center mb-6">
             <h2 className="text-5xl font-bold mb-2 bg-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(16,185,129,0.6)] flex items-center justify-center gap-3">Turn your GitHub repo into <span className="bg-emerald-300 text-black px-2 py-1 rounded">beats</span> <Music className="text-emerald-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]" size={48} /></h2>
-            <p className="text-slate-400 text-sm">Paste your GitHub repository URL to generate music</p>
+                <p className="text-slate-400 text-sm">Paste your GitHub repository URL to generate music</p>
           </div>
           
-          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-4">
-            {/* Repository URL */}
+              <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-4">
+                {/* Repository URL */}
               <input
                 type="url"
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
                 placeholder="https://github.com/username/repository"
-              required
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-            />
-            
-            {/* Song Title */}
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Song title"
-              required
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-            />
-            
-            {/* Audio File */}
-            <div>
-              <label className="block text-sm text-slate-400 mb-2">Audio File (required)</label>
-              <input
-                type="file"
-                id="audioFile"
-                accept="audio/*"
-                onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                required
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-300 file:text-black hover:file:bg-emerald-400 focus:outline-none focus:border-emerald-400 transition-all duration-300"
-              />
-            </div>
-            
-            {/* Lyrics (Optional) */}
-            <div>
-              <label className="block text-sm text-slate-400 mb-2">Lyrics (optional)</label>
-              <textarea
-                value={lyrics}
-                onChange={(e) => setLyrics(e.target.value)}
-                placeholder="Enter song lyrics..."
-                rows={4}
-                className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)] resize-vertical"
-              />
-            </div>
-            
+                  required
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                />
+                
+                {/* Song Title */}
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Song title"
+                  required
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                />
+                
+                {/* Audio File */}
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Audio File (required)</label>
+                  <input
+                    type="file"
+                    id="audioFile"
+                    accept="audio/*"
+                    onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
+                    required
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-300 file:text-black hover:file:bg-emerald-400 focus:outline-none focus:border-emerald-400 transition-all duration-300"
+                  />
+                </div>
+                
+                {/* Lyrics (Optional) */}
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Lyrics (optional)</label>
+                  <textarea
+                    value={lyrics}
+                    onChange={(e) => setLyrics(e.target.value)}
+                    placeholder="Enter song lyrics..."
+                    rows={4}
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)] resize-vertical"
+                  />
+                </div>
+                
               <button
                 type="submit"
-                disabled={submitting || !repoUrl.trim() || !title.trim() || !audioFile}
-                className="w-full px-8 py-3 bg-emerald-300 text-black font-semibold rounded-md hover:bg-emerald-400 hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/50 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
+                  disabled={submitting || !repoUrl.trim() || !title.trim() || !audioFile}
+                  className="w-full px-8 py-3 bg-emerald-300 text-black font-semibold rounded-md hover:bg-emerald-400 hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/50 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
               >
-              {submitting ? 'Uploading...' : 'Upload Song'}
+                  {submitting ? 'Uploading...' : 'Upload Song'}
               </button>
           </form>
         </div>
@@ -344,17 +395,17 @@ export default function Home() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Leaderboard</h2>
-            <div className="text-sm text-gray-400">{songs.length} beats generated</div>
+                <div className="text-sm text-gray-400">{songs.length} beats generated</div>
           </div>
 
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="text-gray-500 text-lg mb-2">Loading beats...</div>
-            </div>
-          ) : (
-            <>
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="text-gray-500 text-lg mb-2">Loading beats...</div>
+                </div>
+              ) : (
+                <>
           {/* Leaderboard List */}
-              <div className="space-y-3 transition-all duration-300">
+                  <div className="space-y-3 transition-all duration-300">
                 {songs
                   .sort((a, b) => b.upvote_count - a.upvote_count) // Sort by upvotes descending
                   .map((song, index) => (
@@ -563,15 +614,222 @@ export default function Home() {
             ))}
           </div>
 
-              {songs.length === 0 && (
+                  {songs.length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-500 text-lg mb-2">No beats generated yet</div>
               <div className="text-gray-400 text-sm">Add your first GitHub repo above to get started!</div>
-            </div>
+                    </div>
+                  )}
+                </>
               )}
-            </>
+            </div>
+          </>
+        ) : (
+          // Repository Analysis Tab
+          <div className="space-y-8">
+            {/* Repository Analysis Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] flex items-center justify-center gap-3">
+                Analyze GitHub <span className="bg-purple-400 text-black px-2 py-1 rounded">Repository</span> 📊
+              </h2>
+              <p className="text-slate-400 text-sm">Get insights into contributors, languages, and activity for any repository</p>
+            </div>
+
+            {/* Repository Search Form */}
+            <div className="max-w-2xl mx-auto">
+              <form onSubmit={handleRepoSubmit} className="flex gap-4">
+                <input
+                  type="url"
+                  value={githubRepoUrl}
+                  onChange={(e) => setGithubRepoUrl(e.target.value)}
+                  placeholder="Enter GitHub repository URL (e.g., https://github.com/owner/repo)"
+                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:shadow-lg focus:shadow-purple-400/50 hover:bg-slate-800 transition-all duration-300"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={repoLoading || !githubRepoUrl.trim()}
+                  className="px-8 py-3 bg-purple-400 text-black font-semibold rounded-md hover:bg-purple-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-400/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
+                >
+                  {repoLoading ? 'Analyzing...' : 'Analyze Repository'}
+                </button>
+              </form>
+            </div>
+
+            {/* Repository Dashboard */}
+            {repoData && (
+              <div className="space-y-6">
+                {/* Repository Header */}
+                <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                  <div className="flex items-center gap-6">
+                    <img
+                      src={repoData.repository.owner.avatar_url}
+                      alt={repoData.repository.owner.login}
+                      className="w-20 h-20 rounded-full border-2 border-purple-400 shadow-lg"
+                    />
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">
+                        {repoData.repository.name}
+                      </h3>
+                      <p className="text-purple-400 font-medium">by @{repoData.repository.owner.login}</p>
+                      {repoData.repository.description && (
+                        <p className="text-slate-400 mt-2">{repoData.repository.description}</p>
+                      )}
+                      <div className="flex items-center gap-4 mt-3 text-sm text-slate-400">
+                        <span>⭐ {repoData.repository.stargazers_count} stars</span>
+                        <span>🍴 {repoData.repository.forks_count} forks</span>
+                        <span>📅 Created {new Date(repoData.repository.created_at).getFullYear()}</span>
+                        <a
+                          href={repoData.repository.html_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-purple-400 hover:text-purple-300 transition-colors hover:cursor-pointer"
+                        >
+                          View Repository →
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
+                    <div className="text-3xl font-bold text-emerald-400 mb-2">
+                      {repoData.stats.totalCommits}
+                    </div>
+                    <div className="text-slate-400 text-sm">Total Commits</div>
+                  </div>
+                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
+                    <div className="text-3xl font-bold text-yellow-400 mb-2">
+                      {repoData.stats.totalContributors}
+                    </div>
+                    <div className="text-slate-400 text-sm">Contributors</div>
+                  </div>
+                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
+                    <div className="text-3xl font-bold text-blue-400 mb-2">
+                      {repoData.stats.topLanguage}
+                    </div>
+                    <div className="text-slate-400 text-sm">Top Language</div>
+                  </div>
+                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
+                    <div className="text-3xl font-bold text-purple-400 mb-2">
+                      {Math.round(repoData.repository.size / 1024)} MB
+                    </div>
+                    <div className="text-slate-400 text-sm">Repository Size</div>
+                  </div>
+                </div>
+
+                {/* Languages & Contributors */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Language Breakdown */}
+                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+                    <h4 className="text-xl font-bold text-white mb-4">Language Breakdown</h4>
+                    <div className="space-y-3">
+                      {repoData.stats.languageBreakdown.length > 0 ? (
+                        repoData.stats.languageBreakdown.map((lang, index) => (
+                          <div key={lang.language} className="flex items-center justify-between">
+                            <span className="text-slate-300">{lang.language}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-slate-700 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className="bg-gradient-to-r from-purple-400 to-pink-400 h-2 rounded-full"
+                                  style={{
+                                    width: `${lang.percentage}%`
+                                  }}
+                                ></div>
+                              </div>
+                              <span className="text-slate-400 text-sm w-12">{lang.percentage}%</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-slate-400">
+                          <div className="text-sm">Language data not available</div>
+                          <div className="text-xs mt-1">Repository may not have detectable languages</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Top Contributors */}
+                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+                    <h4 className="text-xl font-bold text-white mb-4">Top Contributors</h4>
+                    <div className="space-y-3">
+                      {repoData.stats.topContributors.length > 0 ? (
+                        repoData.stats.topContributors.slice(0, 5).map((contributor, index) => (
+                          <div key={contributor.user.login} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={contributor.user.avatar_url}
+                                alt={contributor.user.login}
+                                className="w-8 h-8 rounded-full border border-slate-600"
+                              />
+                              <span className="text-slate-300">{contributor.user.login}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-right">
+                                <div className="text-sm text-white">{contributor.commits} commits</div>
+                                <div className="text-xs text-slate-400">{contributor.percentage}%</div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-slate-400">
+                          <div className="text-sm">Contributor statistics are being processed</div>
+                          <div className="text-xs mt-1">This may take a few moments for large repositories</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activity Timeline */}
+                <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+                  <h4 className="text-xl font-bold text-white mb-4">Recent Activity Timeline</h4>
+                  <div className="space-y-4">
+                    {repoData.stats.activityTimeline.length > 0 ? (
+                      repoData.stats.activityTimeline.map((week, index) => (
+                        <div
+                          key={week.week}
+                          className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-600"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-medium">Week of {week.week}</span>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
+                              <span>📝 {week.commits} commits</span>
+                              <span className="text-emerald-400">+{week.additions} additions</span>
+                              <span className="text-red-400">-{week.deletions} deletions</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 bg-slate-700 rounded-full h-2 overflow-hidden">
+                              <div
+                                className="bg-gradient-to-r from-emerald-400 to-purple-400 h-2 rounded-full"
+                                style={{
+                                  width: `${Math.min(100, (week.commits / Math.max(...repoData.stats.activityTimeline.map(w => w.commits), 1)) * 100)}%`
+                                }}
+                              ></div>
+                            </div>
+                            <span className="text-slate-400 text-sm w-12">{week.commits}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-slate-400">
+                        <div className="text-sm">Activity timeline data unavailable</div>
+                        <div className="text-xs mt-1">Detailed activity stats may not be ready yet</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+            </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

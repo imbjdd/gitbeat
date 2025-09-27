@@ -819,8 +819,8 @@ export default function Home() {
             <div className="text-center py-12">
               <div className="text-gray-500 text-lg mb-2">No beats generated yet</div>
               <div className="text-gray-400 text-sm">Add your first GitHub repo above to get started!</div>
-                    </div>
-                  )}
+            </div>
+          )}
                 </>
               )}
             </div>
@@ -928,7 +928,7 @@ export default function Home() {
                     <h4 className="text-xl font-bold text-white mb-4">Language Breakdown</h4>
                     <div className="space-y-3">
                       {repoData.stats.languageBreakdown.length > 0 ? (
-                        repoData.stats.languageBreakdown.map((lang, index) => (
+                        repoData.stats.languageBreakdown.map((lang) => (
                           <div key={lang.language} className="flex items-center justify-between">
                             <span className="text-slate-300">{lang.language}</span>
                             <div className="flex items-center gap-2">
@@ -958,7 +958,7 @@ export default function Home() {
                     <h4 className="text-xl font-bold text-white mb-4">Top Contributors</h4>
                     <div className="space-y-3">
                       {repoData.stats.topContributors.length > 0 ? (
-                        repoData.stats.topContributors.slice(0, 5).map((contributor, index) => (
+                        repoData.stats.topContributors.slice(0, 5).map((contributor) => (
                           <div key={contributor.user.login} className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                               <img
@@ -1015,7 +1015,7 @@ export default function Home() {
                     <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
                       <h4 className="text-xl font-bold text-yellow-200 mb-4">Contributor Personalities</h4>
                       <div className="space-y-6">
-                        {repoData.aiInsights.contributorPersonalities.map((personality, index) => (
+                        {repoData.aiInsights.contributorPersonalities.map((personality) => (
                           <div key={personality.user.login} className="bg-slate-800 rounded-lg p-4 border border-slate-600">
                             <div className="flex items-start gap-4">
                               <img

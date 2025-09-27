@@ -22,7 +22,7 @@ Language: ${data.repository.language || 'Unknown'}
 Stars: ${data.repository.stars} | Forks: ${data.repository.forks}
 
 Contributors to Roast:
-${data.contributors.map((contributor: any, index: number) => `
+${data.contributors.map((contributor: { username: string; commits: number; percentage: number; additions: number; deletions: number; workPattern: string }, index: number) => `
 ${index + 1}. ${contributor.username}: ${contributor.commits} commits (${contributor.percentage}%), +${contributor.additions}/-${contributor.deletions} lines, ${contributor.workPattern}
 `).join('')}
 
@@ -103,7 +103,7 @@ Respond with this exact JSON structure (no markdown, no extra text):
       
       // Ensure the contributor personalities have the correct user data and proper structure
       if (analysis.contributorPersonalities && Array.isArray(analysis.contributorPersonalities)) {
-        analysis.contributorPersonalities = analysis.contributorPersonalities.map((personality: any, index: number) => {
+        analysis.contributorPersonalities = analysis.contributorPersonalities.map((personality: { workingStyle?: string; personality?: string; strengths?: string[]; collaborationStyle?: string; workPattern?: string }, index: number) => {
           const contributor = data.contributors[index];
           if (contributor) {
             return {
@@ -132,7 +132,7 @@ Respond with this exact JSON structure (no markdown, no extra text):
       console.error('Response ends with:', analysisText.substring(-10));
       
       // Return a structured fallback response with humor
-      const generateRoast = (contributor: any) => {
+      const generateRoast = (contributor: { username: string; commits: number; percentage: number; additions: number; deletions: number; workPattern: string }) => {
         if (contributor.percentage > 50) {
           return {
             workingStyle: "The coding overlord who probably dreams in semicolons",
@@ -160,7 +160,7 @@ Respond with this exact JSON structure (no markdown, no extra text):
       return NextResponse.json({
         teamDynamics: "This team has more drama than a reality TV show, but somehow the code still gets written. The commit history reads like a soap opera of productivity and procrastination.",
         projectHealth: "The project is alive and kicking, mostly because someone is doing all the work while others are probably on coffee breaks. Classic software development dynamics.",
-        contributorPersonalities: data.contributors.slice(0, 3).map((contributor: any) => ({
+        contributorPersonalities: data.contributors.slice(0, 3).map((contributor: { username: string; commits: number; percentage: number; additions: number; deletions: number; workPattern: string }) => ({
           user: {
             login: contributor.username,
             avatar_url: `https://github.com/${contributor.username}.png`,

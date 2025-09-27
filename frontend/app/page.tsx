@@ -318,7 +318,7 @@ export default function Home() {
                     setDustAnalysis(data.content || "");
                     alert(`Analysis complete! View at: ${data.conversationUrl}`);
                   }
-                } catch (error) {
+                } catch {
                   alert('Error analyzing repository');
                 } finally {
                   setIsAnalyzing(false);
@@ -363,9 +363,39 @@ export default function Home() {
                   if (data.error) {
                     alert(`Error: ${data.error}`);
                   } else {
-                    alert(`Music generation started! Data: ${JSON.stringify(data.data)}`);
+                    // Store the AI-generated music in database
+                    const repoInput = document.getElementById('dustRepoInput') as HTMLInputElement;
+                    const repoUrl = repoInput.value.trim();
+                    
+                    if (data.data && repoUrl) {
+                      try {
+                        const saveResponse = await fetch('/api/songs/ai-generated', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            repository_url: repoUrl,
+                            suno_response: data.data,
+                            dust_analysis: dustAnalysis,
+                            title: "Repository AI Beat"
+                          })
+                        });
+                        
+                        const saveData = await saveResponse.json();
+                        if (saveData.success) {
+                          // Add the new song to the list
+                          setSongs([saveData.song, ...songs]);
+                          alert(`Music generated and saved! Check the leaderboard.`);
+                        } else {
+                          alert(`Music generated but failed to save: ${saveData.error}`);
+                        }
+                      } catch {
+                        alert(`Music generated but failed to save to database.`);
+                      }
+                    } else {
+                      alert(`Music generation started! Data: ${JSON.stringify(data.data)}`);
+                    }
                   }
-                } catch (error) {
+                } catch {
                   alert('Error generating music');
                 } finally {
                   setIsGenerating(false);
@@ -417,7 +447,7 @@ export default function Home() {
                   } else {
                     alert(`Music generation started! Data: ${JSON.stringify(data.data)}`);
                   }
-                } catch (error) {
+                } catch {
                   alert('Error generating music');
                 } finally {
                   setIsGenerating(false);

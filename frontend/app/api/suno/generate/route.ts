@@ -15,11 +15,12 @@ interface SunoGenerateRequest {
   callBackUrl?: string;
 }
 
-interface SunoGenerateResponse {
+interface SunoAPIResponse {
   success: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: string;
 }
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,10 +36,19 @@ export async function POST(request: NextRequest) {
       styleWeight = 0.65,
       weirdnessConstraint = 0.65,
       audioWeight = 0.65,
-      callBackUrl = "https://api.example.com/callback"
+      callBackUrl
     }: SunoGenerateRequest = await request.json();
 
-    console.log("📥 Received Suno request:", { prompt, style, title });
+    // Set callback URL to our Next.js app
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXTAUTH_URL 
+      ? process.env.NEXTAUTH_URL
+      : 'http://localhost:3000';
+    
+    const finalCallbackUrl = callBackUrl || `${baseUrl}/api/suno/callback`;
+
+    console.log("📥 Received Suno request:", { prompt, style, title, callbackUrl: finalCallbackUrl });
 
     if (!prompt) {
       return NextResponse.json({ 
@@ -74,7 +84,7 @@ export async function POST(request: NextRequest) {
         styleWeight,
         weirdnessConstraint,
         audioWeight,
-        callBackUrl
+        callBackUrl: finalCallbackUrl
       })
     };
 
@@ -92,13 +102,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data
-    });
+    } as SunoAPIResponse);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     console.error("❌ Error in Suno API:", error);
     return NextResponse.json({
       success: false,
-      error: error.message || 'Internal server error'
+      error: errorMessage
     }, { status: 500 });
   }
 }

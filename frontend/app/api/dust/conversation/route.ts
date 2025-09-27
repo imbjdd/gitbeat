@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DustAPI } from "@dust-tt/client";
-
-interface ToolUsed {
-  type: string;
-  name: string;
-  params: any;
-  output: any;
-}
+import type { ToolUsed } from '@/lib/types/dust';
 
 interface AgentResponse {
   content: string;
@@ -43,27 +37,40 @@ async function streamAgentResponse(dustAPI: DustAPI, conversationId: string, use
     console.log(`📡 Event type: ${event.type}`, event);
     switch (event.type) {
       case "agent_action_success":
-        toolsUsed.push({
-          type: event.action.type,
-          name: event.action.name || "unknown",
-          params: event.action.params || {},
-          output: event.action.output || null
-        });
+        if (event.action && typeof event.action === 'object') {
+          const action = event.action as {
+            type?: string;
+            name?: string;
+            params?: Record<string, unknown>;
+            output?: unknown;
+          };
+          toolsUsed.push({
+            type: action.type || "unknown",
+            name: action.name || "unknown",
+            params: action.params || {},
+            output: action.output || null
+          });
+        }
         break;
         
       case "generation_tokens":
-        if (event.content?.text) {
-          messageContent += event.content.text;
+        if ('text' in event && typeof event.text === 'string') {
+          messageContent += event.text;
         }
         break;
         
       case "agent_message_success":
-        messageContent = event.message.content || "";
+        if (event.message && typeof event.message === 'object' && 'content' in event.message) {
+          messageContent = (event.message as { content?: string }).content || "";
+        }
         isFinished = true;
         break;
         
       case "agent_error":
-        throw new Error(`Agent error: ${event.content.message}`);
+        const errorMsg = event.error && typeof event.error === 'object' && 'message' in event.error 
+          ? event.error.message 
+          : 'Unknown error';
+        throw new Error(`Agent error: ${errorMsg}`);
         
       case "agent_generation_cancelled":
         isFinished = true;
@@ -120,8 +127,7 @@ export async function POST(request: NextRequest) {
       throw new Error("No active agents found");
     }
 
-    // Use the first active agent or specified mentions
-    const selectedAgent = activeAgents[0];
+    // Use the first active agent
 
     // Create a conversation with a message
     const conversationResult = await dustAPI.createConversation({
@@ -170,10 +176,11 @@ export async function POST(request: NextRequest) {
       toolsUsed: agentResponse.toolsUsed,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     console.error("Error in Dust API:", error);
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

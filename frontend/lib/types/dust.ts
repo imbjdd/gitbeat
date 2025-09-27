@@ -1,8 +1,8 @@
 export interface ToolUsed {
   type: string;
   name: string;
-  params: any;
-  output: any;
+  params: Record<string, unknown>;
+  output: unknown;
 }
 
 export interface ToolBreakdown {

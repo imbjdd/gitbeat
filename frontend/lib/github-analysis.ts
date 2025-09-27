@@ -36,6 +36,15 @@ export interface LanguageStats {
   [language: string]: number; // bytes of code
 }
 
+export interface ContributorPersonality {
+  user: GitHubUser;
+  workingStyle: string;
+  personality: string;
+  strengths: string[];
+  collaborationStyle: string;
+  workPattern: string;
+}
+
 export interface RepositoryAnalysis {
   repository: GitHubRepository;
   contributors: ContributorStats[];
@@ -63,12 +72,17 @@ export interface RepositoryAnalysis {
       deletions: number;
     }>;
   };
+  aiInsights?: {
+    teamDynamics: string;
+    projectHealth: string;
+    contributorPersonalities: ContributorPersonality[];
+  };
 }
 
 /**
  * Analyzes a GitHub repository and returns comprehensive statistics
  */
-export async function analyzeGitHubRepository(repoUrl: string): Promise<RepositoryAnalysis> {
+export async function analyzeGitHubRepository(repoUrl: string, setAiAnalyzing?: (analyzing: boolean) => void): Promise<RepositoryAnalysis> {
   // Parse repository URL to get owner and repo name
   const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
   if (!match) {
@@ -130,6 +144,9 @@ export async function analyzeGitHubRepository(repoUrl: string): Promise<Reposito
 
   // Analyze the data with safe fallbacks
   const safeContributorsData = Array.isArray(contributorsData) ? contributorsData : [];
+  const topContributors = getTopContributors(safeContributorsData);
+  const activityTimeline = getActivityTimeline(safeContributorsData);
+  
   const analysis: RepositoryAnalysis = {
     repository: repoData,
     contributors: safeContributorsData,
@@ -139,10 +156,29 @@ export async function analyzeGitHubRepository(repoUrl: string): Promise<Reposito
       totalContributors: safeContributorsData.length,
       topLanguage: getTopLanguage(languagesData),
       languageBreakdown: getLanguageBreakdown(languagesData),
-      topContributors: getTopContributors(safeContributorsData),
-      activityTimeline: getActivityTimeline(safeContributorsData)
+      topContributors,
+      activityTimeline
     }
   };
+
+  // Add AI insights if contributors data is available
+  if (safeContributorsData.length > 0 && topContributors.length > 0) {
+    try {
+      if (setAiAnalyzing) setAiAnalyzing(true);
+      const aiInsights = await analyzeContributorsWithAI(
+        repoData,
+        safeContributorsData,
+        topContributors,
+        activityTimeline
+      );
+      analysis.aiInsights = aiInsights;
+    } catch (error) {
+      console.warn('Failed to get AI insights:', error);
+      // AI insights will remain undefined
+    } finally {
+      if (setAiAnalyzing) setAiAnalyzing(false);
+    }
+  }
 
   return analysis;
 }
@@ -238,4 +274,108 @@ export function getActivityTimeline(contributors: ContributorStats[]): Array<{
     }))
     .sort((a, b) => new Date(b.week).getTime() - new Date(a.week).getTime())
     .slice(0, 12); // Last 12 weeks
+}
+
+/**
+ * Analyzes contributors using OpenAI to provide personality insights
+ */
+export async function analyzeContributorsWithAI(
+  repository: GitHubRepository,
+  contributors: ContributorStats[],
+  topContributors: Array<{
+    user: GitHubUser;
+    commits: number;
+    additions: number;
+    deletions: number;
+    percentage: number;
+  }>,
+  activityTimeline: Array<{
+    week: string;
+    commits: number;
+    additions: number;
+    deletions: number;
+  }>
+): Promise<{
+  teamDynamics: string;
+  projectHealth: string;
+  contributorPersonalities: ContributorPersonality[];
+}> {
+  try {
+    // Prepare data for AI analysis
+    const analysisData = {
+      repository: {
+        name: repository.name,
+        description: repository.description,
+        language: repository.language,
+        stars: repository.stargazers_count,
+        forks: repository.forks_count,
+        size: repository.size,
+        created: repository.created_at,
+        updated: repository.updated_at
+      },
+      contributors: topContributors.slice(0, 5).map(contributor => ({
+        username: contributor.user.login,
+        commits: contributor.commits,
+        additions: contributor.additions,
+        deletions: contributor.deletions,
+        percentage: contributor.percentage,
+        // Calculate work patterns from contributor stats
+        workPattern: analyzeWorkPattern(contributors.find(c => c.author.login === contributor.user.login))
+      })),
+      activityTimeline: activityTimeline.slice(0, 8) // Last 8 weeks
+    };
+
+    const response = await fetch('/api/analyze-contributors', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(analysisData)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to analyze contributors with AI');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error analyzing contributors with AI:', error);
+    // Return fallback data if AI analysis fails
+    return {
+      teamDynamics: "AI analysis unavailable - please check your OpenAI configuration.",
+      projectHealth: "Unable to assess project health without AI analysis.",
+      contributorPersonalities: topContributors.slice(0, 3).map(contributor => ({
+        user: contributor.user,
+        workingStyle: "Analysis unavailable",
+        personality: "Unable to determine without AI analysis",
+        strengths: ["Data unavailable"],
+        collaborationStyle: "Unknown",
+        workPattern: "Unable to analyze"
+      }))
+    };
+  }
+}
+
+/**
+ * Analyzes work patterns from contributor statistics
+ */
+function analyzeWorkPattern(contributor: ContributorStats | undefined): string {
+  if (!contributor || contributor.weeks.length === 0) {
+    return "Insufficient data";
+  }
+
+  const recentWeeks = contributor.weeks.slice(-12); // Last 12 weeks
+  const activeWeeks = recentWeeks.filter(week => week.c > 0).length;
+  const avgCommitsPerActiveWeek = recentWeeks.reduce((sum, week) => sum + week.c, 0) / Math.max(activeWeeks, 1);
+  const consistency = activeWeeks / recentWeeks.length;
+
+  if (consistency > 0.8) {
+    return "Highly consistent contributor";
+  } else if (consistency > 0.5) {
+    return "Regular contributor";
+  } else if (avgCommitsPerActiveWeek > 5) {
+    return "Burst contributor (high intensity, sporadic)";
+  } else {
+    return "Occasional contributor";
+  }
 }

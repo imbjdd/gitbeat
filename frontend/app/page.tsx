@@ -44,6 +44,7 @@ export default function Home() {
   const [githubRepoUrl, setGithubRepoUrl] = useState("");
   const [repoData, setRepoData] = useState<RepositoryAnalysis | null>(null);
   const [repoLoading, setRepoLoading] = useState(false);
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
 
   // Fetch songs on component mount
   useEffect(() => {
@@ -249,14 +250,16 @@ export default function Home() {
     if (!githubRepoUrl.trim()) return;
     
     setRepoLoading(true);
+    setAiAnalyzing(false);
     try {
-      const analysis = await analyzeGitHubRepository(githubRepoUrl.trim());
+      const analysis = await analyzeGitHubRepository(githubRepoUrl.trim(), setAiAnalyzing);
       setRepoData(analysis);
     } catch (error) {
       console.error('Error analyzing repository:', error);
       alert('Failed to analyze GitHub repository. Please check the URL.');
     } finally {
       setRepoLoading(false);
+      setAiAnalyzing(false);
     }
   };
 
@@ -626,11 +629,11 @@ export default function Home() {
           </>
         ) : (
           // Repository Analysis Tab
-          <div className="space-y-8">
+          <div className="space-y-8 my-24">
             {/* Repository Analysis Header */}
             <div className="text-center mb-8">
               <h2 className="text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(168,85,247,0.6)] flex items-center justify-center gap-3">
-                Analyze GitHub <span className="bg-purple-400 text-black px-2 py-1 rounded">Repository</span> 📊
+                Analyze GitHub <span className="bg-purple-400 text-black px-2 py-1 rounded">Repository</span> 
               </h2>
               <p className="text-slate-400 text-sm">Get insights into contributors, languages, and activity for any repository</p>
             </div>
@@ -785,49 +788,125 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Activity Timeline */}
-                <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                  <h4 className="text-xl font-bold text-white mb-4">Recent Activity Timeline</h4>
-                  <div className="space-y-4">
-                    {repoData.stats.activityTimeline.length > 0 ? (
-                      repoData.stats.activityTimeline.map((week, index) => (
-                        <div
-                          key={week.week}
-                          className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-600"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-medium">Week of {week.week}</span>
-                            </div>
-                            <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
-                              <span>📝 {week.commits} commits</span>
-                              <span className="text-emerald-400">+{week.additions} additions</span>
-                              <span className="text-red-400">-{week.deletions} deletions</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 bg-slate-700 rounded-full h-2 overflow-hidden">
-                              <div
-                                className="bg-gradient-to-r from-emerald-400 to-purple-400 h-2 rounded-full"
-                                style={{
-                                  width: `${Math.min(100, (week.commits / Math.max(...repoData.stats.activityTimeline.map(w => w.commits), 1)) * 100)}%`
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-slate-400 text-sm w-12">{week.commits}</span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-slate-400">
-                        <div className="text-sm">Activity timeline data unavailable</div>
-                        <div className="text-xs mt-1">Detailed activity stats may not be ready yet</div>
+                
+
+                {/* AI Insights Section */}
+                {repoData.aiInsights ? (
+                  <div className="space-y-6">
+                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                      🤖 AI Team Analysis
+                    </h3>
+                    
+                    {/* Team Dynamics & Project Health */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+                        <h4 className="text-xl font-bold text-emerald-400 mb-3">Team Dynamics</h4>
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          {repoData.aiInsights.teamDynamics}
+                        </p>
                       </div>
-                    )}
+                      <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+                        <h4 className="text-xl font-bold text-blue-400 mb-3">Project Health</h4>
+                        <p className="text-slate-300 text-sm leading-relaxed">
+                          {repoData.aiInsights.projectHealth}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Contributor Personalities */}
+                    <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+                      <h4 className="text-xl font-bold text-purple-400 mb-4">Contributor Personalities</h4>
+                      <div className="space-y-6">
+                        {repoData.aiInsights.contributorPersonalities.map((personality, index) => (
+                          <div key={personality.user.login} className="bg-slate-800 rounded-lg p-4 border border-slate-600">
+                            <div className="flex items-start gap-4">
+                              <img
+                                src={personality.user.avatar_url}
+                                alt={personality.user.login}
+                                className="w-12 h-12 rounded-full border-2 border-purple-400 flex-shrink-0"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h5 className="text-lg font-semibold text-white">
+                                    {personality.user.login}
+                                  </h5>
+                                  <span className="px-2 py-1 bg-purple-400/20 text-purple-300 text-xs rounded-full">
+                                    {personality.workPattern}
+                                  </span>
+                                </div>
+                                
+                                <div className="space-y-3">
+                                  <div>
+                                    <span className="text-sm font-medium text-emerald-400">Working Style: </span>
+                                    <span className="text-sm text-slate-300">{personality.workingStyle}</span>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="text-sm font-medium text-blue-400">Personality: </span>
+                                    <span className="text-sm text-slate-300">{personality.personality}</span>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="text-sm font-medium text-yellow-400">Collaboration: </span>
+                                    <span className="text-sm text-slate-300">{personality.collaborationStyle}</span>
+                                  </div>
+                                  
+                                  <div>
+                                    <span className="text-sm font-medium text-pink-400">Strengths: </span>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {personality.strengths.map((strength, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="px-2 py-1 bg-pink-400/20 text-pink-300 text-xs rounded-full"
+                                        >
+                                          {strength}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : aiAnalyzing ? (
+                  <div className="space-y-6">
+                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                      🤖 AI Team Analysis
+                    </h3>
+                    <div className="bg-slate-900 rounded-xl p-8 border border-slate-700 text-center">
+                      <div className="animate-spin w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                      <p className="text-slate-300 text-sm">
+                        AI is analyzing contributor patterns and team dynamics...
+                      </p>
+                      <p className="text-slate-400 text-xs mt-2">
+                        This may take 10-30 seconds depending on repository complexity
+                      </p>
+                    </div>
+                  </div>
+                ) : repoData.stats.totalContributors > 0 ? (
+                  <div className="space-y-6">
+                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                      🤖 AI Team Analysis
+                    </h3>
+                    <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
+                      <p className="text-slate-400 text-sm">
+                        AI analysis requires OpenAI API key configuration
+                      </p>
+                      <p className="text-slate-500 text-xs mt-2">
+                        Set OPENAI_API_KEY environment variable to enable personality insights
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
             </div>
           )}
+
+          
         </div>
         )}
       </div>

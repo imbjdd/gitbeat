@@ -12,7 +12,6 @@ interface SunoGenerateRequest {
   styleWeight?: number;
   weirdnessConstraint?: number;
   audioWeight?: number;
-  callBackUrl?: string;
 }
 
 interface SunoAPIResponse {
@@ -35,20 +34,10 @@ export async function POST(request: NextRequest) {
       vocalGender = "m",
       styleWeight = 0.65,
       weirdnessConstraint = 0.65,
-      audioWeight = 0.65,
-      callBackUrl
+      audioWeight = 0.65
     }: SunoGenerateRequest = await request.json();
 
-    // Set callback URL to our Next.js app
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://gitbeat.vercel.app'
-      : process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000';
-    
-    const finalCallbackUrl = callBackUrl || `${baseUrl}/api/suno/callback`;
-
-    console.log("📥 Received Suno request:", { prompt, style, title, callbackUrl: finalCallbackUrl });
+    console.log("📥 Received Suno request:", { prompt, style, title });
 
     if (!prompt) {
       return NextResponse.json({ 
@@ -84,7 +73,7 @@ export async function POST(request: NextRequest) {
         styleWeight,
         weirdnessConstraint,
         audioWeight,
-        callBackUrl: finalCallbackUrl
+        callBackUrl: 'https://gitbeat.vercel.app/api/suno/callback'
       })
     };
 
@@ -101,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data
+      data: data.data // Extract the actual data from Suno's response
     } as SunoAPIResponse);
 
   } catch (error: unknown) {

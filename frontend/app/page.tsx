@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Play, Pause, ArrowUp, Music } from "lucide-react";
+import { useSunoPolling } from "@/lib/hooks/useSunoPolling";
 
 interface Song {
   id: string;
@@ -42,6 +43,47 @@ export default function Home() {
   const [dustAnalysis, setDustAnalysis] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Suno polling hook for music generation
+  const sunoPolling = useSunoPolling({
+    onSuccess: async (data) => {
+      if (data.response?.sunoData && data.response.sunoData.length > 0) {
+        const sunoData = data.response.sunoData[0];
+        
+        // Get the repository URL from the input
+        const repoInput = document.getElementById('dustRepoInput') as HTMLInputElement;
+        const repoUrl = repoInput.value.trim();
+        
+        if (repoUrl) {
+          try {
+            const saveResponse = await fetch('/api/songs/ai-generated', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                repository_url: repoUrl,
+                suno_response: sunoData,
+                dust_analysis: dustAnalysis,
+                title: sunoData.title || "Repository AI Beat"
+              })
+            });
+            
+            const saveData = await saveResponse.json();
+            if (saveData.success) {
+              setSongs([saveData.song, ...songs]);
+              alert('Music generated and saved successfully!');
+            } else {
+              alert(`Music generated but failed to save: ${saveData.error}`);
+            }
+          } catch {
+            alert('Music generated but failed to save to database.');
+          }
+        }
+      }
+    },
+    onError: (error) => {
+      alert(`Music generation failed: ${error}`);
+    }
+  });
 
   // Fetch songs on component mount
   useEffect(() => {
@@ -362,38 +404,12 @@ export default function Home() {
                   const data = await response.json();
                   if (data.error) {
                     alert(`Error: ${data.error}`);
+                  } else if (data.data?.taskId) {
+                    // Start polling for the result
+                    sunoPolling.startPolling(data.data.taskId);
+                    alert('Music generation started! You will be notified when it completes.');
                   } else {
-                    // Store the AI-generated music in database
-                    const repoInput = document.getElementById('dustRepoInput') as HTMLInputElement;
-                    const repoUrl = repoInput.value.trim();
-                    
-                    if (data.data && repoUrl) {
-                      try {
-                        const saveResponse = await fetch('/api/songs/ai-generated', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            repository_url: repoUrl,
-                            suno_response: data.data,
-                            dust_analysis: dustAnalysis,
-                            title: "Repository AI Beat"
-                          })
-                        });
-                        
-                        const saveData = await saveResponse.json();
-                        if (saveData.success) {
-                          // Add the new song to the list
-                          setSongs([saveData.song, ...songs]);
-                          alert(`Music generated and saved! Check the leaderboard.`);
-                        } else {
-                          alert(`Music generated but failed to save: ${saveData.error}`);
-                        }
-                      } catch {
-                        alert(`Music generated but failed to save to database.`);
-                      }
-                    } else {
-                      alert(`Music generation started! Data: ${JSON.stringify(data.data)}`);
-                    }
+                    alert('Music generation started but no task ID received');
                   }
                 } catch {
                   alert('Error generating music');
@@ -401,10 +417,10 @@ export default function Home() {
                   setIsGenerating(false);
                 }
               }}
-              disabled={isGenerating}
+              disabled={isGenerating || sunoPolling.isPolling}
               className="w-full px-6 py-3 bg-pink-500 text-white font-semibold rounded-md hover:bg-pink-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isGenerating ? 'Generating Music...' : '🎵 Generate Music from Analysis'}
+              {isGenerating ? 'Starting Generation...' : sunoPolling.isPolling ? sunoPolling.progress : '🎵 Generate Music from Analysis'}
             </button>
           </div>
         )}
@@ -444,8 +460,11 @@ export default function Home() {
                   const data = await response.json();
                   if (data.error) {
                     alert(`Error: ${data.error}`);
+                  } else if (data.data?.taskId) {
+                    alert(`Music generation started! Task ID: ${data.data.taskId}. Check back in a few minutes.`);
+                    input.value = ''; // Clear the input
                   } else {
-                    alert(`Music generation started! Data: ${JSON.stringify(data.data)}`);
+                    alert('Music generation started but no task ID received');
                   }
                 } catch {
                   alert('Error generating music');

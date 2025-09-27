@@ -44,7 +44,7 @@ export interface SongWithUpvotes extends Song {
 export const uploadAudioFile = async (file: File, songId: string) => {
   const fileName = `${songId}-${Date.now()}.${file.name.split('.').pop()}`
   
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('audio-files')
     .upload(fileName, file)
 
@@ -66,7 +66,7 @@ export const uploadLyricsFile = async (lyrics: string, title: string, songId: st
   const content = `Title: ${title}\n\n${lyrics}`
   const file = new Blob([content], { type: 'text/plain' })
   
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('lyrics-files')
     .upload(fileName, file)
 

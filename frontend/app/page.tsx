@@ -401,19 +401,28 @@ export default function Home() {
                         </div>
                       </div>
 
-                  {/* Progress bar */}
-                  <div className="flex-1 mx-8">
-                    <div className="flex justify-between text-xs text-slate-400 mb-1">
-                      <span>popularity</span>
-                      <span>{Math.floor(Math.random() * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-slate-700 rounded-lg h-2 overflow-hidden shadow-inner">
-                      <div 
-                        className="bg-emerald-300 h-2 rounded-lg hover:from-fuchsia-500 hover:to-violet-500 transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
-                        style={{ width: `${Math.floor(Math.random() * 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                      {/* Progress bar */}
+                      <div className="flex-1 mx-8">
+                        <div className="flex justify-between text-xs text-slate-400 mb-1">
+                          <span>popularity</span>
+                          <span>{(() => {
+                            const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
+                            const percentage = Math.round((song.upvote_count / maxUpvotes) * 100);
+                            return `${percentage}%`;
+                          })()}</span>
+                        </div>
+                        <div className="w-full bg-slate-700 rounded-lg h-2 overflow-hidden shadow-inner">
+                          <div 
+                            className="bg-emerald-300 h-2 rounded-lg hover:from-fuchsia-500 hover:to-violet-500 transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
+                            style={{ 
+                              width: `${(() => {
+                                const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
+                                return Math.round((song.upvote_count / maxUpvotes) * 100);
+                              })()}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
 
                       {/* Play button */}
                       <button

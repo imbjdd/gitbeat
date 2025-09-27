@@ -36,6 +36,9 @@ export default function Home() {
   const [rankingChanges, setRankingChanges] = useState<Set<string>>(new Set());
   const [rankingDirections, setRankingDirections] = useState<{[key: string]: 'up' | 'down'}>({});
   const previousRankingsRef = useRef<{[key: string]: number}>({});
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Fetch songs on component mount
   useEffect(() => {
@@ -156,32 +159,83 @@ export default function Home() {
       return;
     }
 
-    // Stop current audio if playing
+    // If same song is playing, pause/resume
+    if (playingId === id && currentAudio) {
+      if (isPlaying) {
+        currentAudio.pause();
+        setIsPlaying(false);
+      } else {
+        currentAudio.play().then(() => {
+          setIsPlaying(true);
+        }).catch((error) => {
+          console.error('Error resuming audio:', error);
+          alert('Error playing audio file');
+        });
+      }
+      return;
+    }
+
+    // Stop current audio if playing different song
     if (currentAudio) {
       currentAudio.pause();
       setCurrentAudio(null);
-    }
-
-    // If same song, just stop
-    if (playingId === id) {
       setPlayingId(null);
-      return;
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
     }
 
     // Play new song
     const audio = new Audio(song.audio_url);
+    
+    // Set up event listeners
+    audio.addEventListener('loadedmetadata', () => {
+      setDuration(audio.duration);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      setCurrentTime(audio.currentTime);
+    });
+
     audio.addEventListener('ended', () => {
       setPlayingId(null);
       setCurrentAudio(null);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+    });
+
+    audio.addEventListener('pause', () => {
+      setIsPlaying(false);
+    });
+
+    audio.addEventListener('play', () => {
+      setIsPlaying(true);
     });
     
     audio.play().then(() => {
       setPlayingId(id);
       setCurrentAudio(audio);
+      setIsPlaying(true);
     }).catch((error) => {
       console.error('Error playing audio:', error);
       alert('Error playing audio file');
     });
+  };
+
+  // Function to seek to a specific time
+  const seekTo = (time: number) => {
+    if (currentAudio) {
+      currentAudio.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  // Format time in MM:SS format
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const handleUpvote = async (id: string) => {
@@ -429,7 +483,7 @@ export default function Home() {
                         onClick={() => togglePlay(song.id)}
                         className="w-10 h-10 text-white rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 mr-3 flex items-center justify-center "
                       >
-                        {playingId === song.id ? (
+                        {playingId === song.id && isPlaying ? (
                           <Pause size={16} />
                         ) : (
                           <Play size={16} />
@@ -450,14 +504,60 @@ export default function Home() {
 
                     </div>
 
-                    {/* Playing indicator */}
+                    {/* Enhanced Playing indicator with controls */}
                     {playingId === song.id && (
-                  <div className="mt-4 pt-4 border-t border-slate-700">
-                    <div className="text-xs text-emerald-400 mb-2 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">♪ playing beat... 🔥🎵💯</div>
-                    <div className="w-full bg-slate-700 rounded-lg h-1 overflow-hidden shadow-inner">
-                      <div className="bg-gradient-to-r from-emerald-500 via-cyan-500 to-violet-500 h-1 rounded-lg w-1/3 shadow-[0_0_15px_rgba(16,185,129,0.7)]"></div>
-                    </div>
-                  </div>
+                      <div className="mt-4 pt-4 border-t border-slate-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-xs text-emerald-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]">
+                            {isPlaying ? '♪ playing beat...' : 'paused'}
+                          </div>
+                          <div className="text-xs text-slate-400">
+                            {formatTime(currentTime)} / {formatTime(duration)}
+                          </div>
+                        </div>
+                        
+                        {/* Seekable progress bar */}
+                        <div 
+                          className="w-full bg-slate-700 rounded-lg h-2 overflow-hidden shadow-inner cursor-pointer relative group"
+                          onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const clickX = e.clientX - rect.left;
+                            const width = rect.width;
+                            const newTime = (clickX / width) * duration;
+                            seekTo(newTime);
+                          }}
+                        >
+                          {/* Progress bar */}
+                          <div 
+                            className="bg-gradient-to-r bg-emerald-300 h-2 rounded-lg transition-all duration-100 shadow-[0_0_15px_rgba(16,185,129,0.7)]"
+                            style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                          ></div>
+                          
+                          {/* Hover indicator */}
+                          <div 
+                            className="absolute top-0 h-2 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                            style={{ 
+                              left: '0px',
+                              width: '2px',
+                              transform: 'translateX(var(--mouse-x, 0px))'
+                            }}
+                          ></div>
+                        </div>
+                        
+                        {/* Playback controls */}
+                        <div className="flex items-center justify-center mt-3 gap-2">
+                          <button
+                            onClick={() => togglePlay(song.id)}
+                            className="w-8 h-8 bg-emerald-400 text-black rounded-full hover:bg-emerald-300 transition-all duration-200 flex items-center justify-center hover:scale-110"
+                          >
+                            {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+                          </button>
+                          
+                          <div className="text-xs text-slate-400 ml-2">
+                            Click on the progress bar to seek
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}

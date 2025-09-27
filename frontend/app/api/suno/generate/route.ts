@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
     }: SunoGenerateRequest = await request.json();
 
     // Set callback URL to our Next.js app
-    const baseUrl = process.env.VERCEL_URL 
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://gitbeat.vercel.app'
+      : process.env.VERCEL_URL 
       ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXTAUTH_URL 
-      ? process.env.NEXTAUTH_URL
       : 'http://localhost:3000';
     
     const finalCallbackUrl = callBackUrl || `${baseUrl}/api/suno/callback`;

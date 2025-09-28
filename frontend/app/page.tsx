@@ -49,6 +49,7 @@ export default function Home() {
   const [dustAnalysis, setDustAnalysis] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [analysisTone, setAnalysisTone] = useState<'fun' | 'serious'>('fun');
 
   // Suno polling hook for music generation
   const sunoPolling = useSunoPolling({
@@ -332,7 +333,7 @@ export default function Home() {
     setRepoLoading(true);
     setAiAnalyzing(false);
     try {
-      const analysis = await analyzeGitHubRepository(githubRepoUrl.trim(), setAiAnalyzing);
+      const analysis = await analyzeGitHubRepository(githubRepoUrl.trim(), setAiAnalyzing, analysisTone);
       setRepoData(analysis);
     } catch (error) {
       console.error('Error analyzing repository:', error);
@@ -376,20 +377,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent hover:from-orange-400 hover:to-fuchsia-400 transition-all duration-500 cursor-pointer drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]">gitbeat 🎧</h1>
+        <div className="flex items-center justify-center sm:justify-between mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent hover:from-orange-400 hover:to-fuchsia-400 transition-all duration-500 cursor-pointer drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]">gitbeat 🎧</h1>
         </div>
 
 
 
         {/* Tab Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-600">
+        <div className="flex justify-center mb-6 sm:mb-8 px-2">
+          <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-600 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('beats')}
-              className={`px-6 py-2 rounded-md font-medium transition-all duration-300 hover:cursor-pointer ${
+              className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 rounded-md font-medium text-sm sm:text-base transition-all duration-300 hover:cursor-pointer ${
                 activeTab === 'beats'
                   ? 'bg-emerald-300 text-black shadow-lg shadow-emerald-300/50'
                   : 'text-slate-400 hover:text-white hover:bg-slate-700'
@@ -399,13 +400,14 @@ export default function Home() {
             </button>
             <button
               onClick={() => setActiveTab('repo')}
-              className={`px-6 py-2 rounded-md font-medium transition-all duration-300 hover:cursor-pointer ${
+              className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 rounded-md font-medium text-sm sm:text-base transition-all duration-300 hover:cursor-pointer ${
                 activeTab === 'repo'
                   ? 'bg-yellow-200 text-black shadow-lg shadow-yellow-200/50'
                   : 'text-slate-400 hover:text-white hover:bg-slate-700'
               }`}
             >
-              Repository Analysis
+              <span className="hidden sm:inline">Repository Analysis</span>
+              <span className="sm:hidden">Analysis</span>
             </button>
           </div>
         </div>
@@ -414,19 +416,25 @@ export default function Home() {
         {activeTab === 'beats' ? (
           <>
             {/* Song Upload Section */}
-        <div className="my-24">
-          <div className="text-center mb-6">
-            <h2 className="text-5xl font-bold mb-2 bg-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(16,185,129,0.6)] flex items-center justify-center gap-3">Turn your GitHub repo into <span className="bg-emerald-300 text-black px-2 py-1 rounded">beats</span> <Music className="text-emerald-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]" size={48} /></h2>
-                <p className="text-slate-400 text-sm">Paste your GitHub repository URL to generate music</p>
+        <div className="my-12 sm:my-24">
+          <div className="text-center mb-6 px-4">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-2 bg-emerald-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(16,185,129,0.6)] flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+              <span className="flex items-center gap-2">Turn your GitHub repo into</span>
+              <span className="flex items-center gap-2">
+                <span className="bg-emerald-300 text-black px-2 py-1 rounded text-xl sm:text-2xl lg:text-5xl">beats</span> 
+                <Music className="text-emerald-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]" size={32} />
+              </span>
+            </h2>
+            <p className="text-slate-400 text-xs sm:text-sm">Paste your GitHub repository URL to generate music</p>
           </div>
           
               <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-4">
        
-          <div className="max-w-2xl mx-auto flex gap-3">
+          <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3 px-4">
             <input
               type="url"
               placeholder="https://github.com/username/repository"
-              className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-violet-400 focus:shadow-lg focus:shadow-violet-400/50 hover:bg-slate-700 transition-all duration-300"
+              className="flex-1 px-3 sm:px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-violet-400 focus:shadow-lg focus:shadow-violet-400/50 hover:bg-slate-700 transition-all duration-300 text-sm sm:text-base"
               id="dustRepoInput"
             />
             <button
@@ -457,7 +465,7 @@ export default function Home() {
                 }
               }}
               disabled={isAnalyzing}
-              className="px-6 py-3 bg-green-300 text-black font-semibold rounded-md hover:bg-violet-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 sm:px-6 py-3 bg-green-300 text-black font-semibold rounded-md hover:bg-violet-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
             >
               {isAnalyzing ? 'Loading...' : 'Analyze'}
             </button>
@@ -485,41 +493,44 @@ export default function Home() {
                   .map((song, index) => (
                   <div
                     key={song.id}
-                    className={`p-4 rounded-lg transition-all duration-500 hover:shadow-xl transform ${
+                    className={`p-3 sm:p-4 rounded-lg transition-all duration-500 hover:shadow-xl transform ${
                       rankingChanges.has(song.id) 
                         ? 'animate-pulse scale-105 ring-2 ring-emerald-400/50' // Animation for ranking change
                         : ''
                     } ${
                         'bg-[#1C2530] hover:bg-slate-800 border-slate-600 hover:border-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.1)]' // Other ranks
-                    } hover:shadow-emerald-500/20 border`}
+                    } hover:shadow-emerald-500/20 border hover:scale-[1.02]`}
                     style={{
                       transitionProperty: 'all, transform, box-shadow',
                       transitionDuration: '800ms',
                       transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                      animationDelay: `${index * 100}ms`,
                     }}
               >
-                <div className="flex items-center">
-                  {/* Rank */}
-                      <div className="relative">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-500 ${
+                {/* Mobile Layout */}
+                <div className="block sm:hidden">
+                  {/* Top row: Rank, Title, Actions */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* Rank */}
+                      <div className="relative flex-shrink-0">
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-500 ${
                           rankingChanges.has(song.id) 
-                            ? 'animate-bounce scale-125' // Extra animation for rank change
+                            ? 'animate-bounce scale-125' 
                             : ''
                         } ${
                           index === 0 
-                            ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' // 1st place
+                            ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50'
                             : index === 1
-                            ? 'bg-gray-400 text-black shadow-lg shadow-gray-400/50' // 2nd place  
+                            ? 'bg-gray-400 text-black shadow-lg shadow-gray-400/50'
                             : index === 2
-                            ? 'bg-amber-600 text-black shadow-lg shadow-amber-600/50' // 3rd place
-                            : 'text-white' // Other ranks
+                            ? 'bg-amber-600 text-black shadow-lg shadow-amber-600/50'
+                            : 'text-white'
                         }`}>
-                    {index + 1}
-                  </div>
-
-                        {/* Ranking direction indicator */}
+                          {index + 1}
+                        </div>
                         {rankingChanges.has(song.id) && rankingDirections[song.id] && (
-                          <div className={`absolute -top-2 -right-2 w-4 h-4 rounded-full flex items-center justify-center text-xs animate-ping ${
+                          <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full flex items-center justify-center text-xs animate-ping ${
                             rankingDirections[song.id] === 'up' 
                               ? 'bg-green-500 text-white' 
                               : 'bg-red-500 text-white'
@@ -528,99 +539,211 @@ export default function Home() {
                           </div>
                         )}
                       </div>
-
+                      
                       {/* Song info */}
-                  <div className="flex items-center gap-3 ml-4 min-w-[200px]">
-                    <div>
-                          <div className="font-semibold text-white hover:text-emerald-400 transition-colors drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]">
-                            {song.title || `${song.repository.name} Beat`}
-                          </div>
-                      <a
-                            href={song.repository.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-slate-400 hover:text-emerald-400 transition-colors hover:drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]"
-                      >
-                            {song.repository.url.replace('https://github.com/', '')}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-white hover:text-emerald-400 transition-colors drop-shadow-[0_0_5px_rgba(16,185,129,0.3)] text-sm truncate">
+                          {song.title || `${song.repository.name} Beat`}
+                        </div>
+                        <a
+                          href={song.repository.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-slate-400 hover:text-emerald-400 transition-colors hover:drop-shadow-[0_0_5px_rgba(16,185,129,0.5)] block truncate"
+                        >
+                          {song.repository.url.replace('https://github.com/', '')}
+                        </a>
+                        {song.lyrics_url && (
+                          <a
+                            href={song.lyrics_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                          >
+                            View Lyrics
                           </a>
-                          {song.lyrics_url && (
-                            <a
-                              href={song.lyrics_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block text-xs text-violet-400 hover:text-violet-300 transition-colors"
-                            >
-                              View Lyrics
-                            </a>
-                          )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Stats */}
-                      <div className="flex items-center gap-8 ml-8 min-w-[200px]">
-                    <div className="text-center">
-                          <div className={`text-lg font-bold text-white hover:text-violet-300 transition-all duration-300 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] ${
-                            recentlyUpvoted.has(song.id) ? 'scale-125 text-violet-300' : ''
-                          }`}>
-                            {song.upvote_count}
-                          </div>
-                          <div className="text-xs text-slate-400">upvotes</div>
-                    </div>
-                    <div className="text-center">
-                          <div className="text-lg font-bold text-emerald-400 hover:text-emerald-300 transition-colors drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]">
-                            {song.audio_url ? '🎵' : '⏳'}
-                    </div>
-                          <div className="text-xs text-slate-400">audio</div>
-                    </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="flex-1 mx-8">
-                    <div className="flex justify-between text-xs text-slate-400 mb-1">
-                      <span>popularity</span>
-                          <span>{(() => {
-                            const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
-                            const percentage = Math.round((song.upvote_count / maxUpvotes) * 100);
-                            return `${percentage}%`;
-                          })()}</span>
-                    </div>
-                    <div className="w-full bg-slate-700 rounded-lg h-2 overflow-hidden shadow-inner">
-                      <div 
-                        className="bg-emerald-300 h-2 rounded-lg hover:from-fuchsia-500 hover:to-violet-500 transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
-                            style={{ 
-                              width: `${(() => {
-                                const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
-                                return Math.round((song.upvote_count / maxUpvotes) * 100);
-                              })()}%` 
-                            }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  {/* Play button */}
-                  <button
+                    
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
                         onClick={() => togglePlay(song.id)}
-                        className="hover:cursor-pointer w-10 h-10 text-white rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 mr-3 flex items-center justify-center "
-                  >
+                        className="hover:cursor-pointer w-8 h-8 text-white rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 flex items-center justify-center"
+                      >
                         {playingId === song.id && isPlaying ? (
-                      <Pause size={16} />
-                    ) : (
-                      <Play size={16} />
-                    )}
-                  </button>
-                
-                  {/* Upvote button */}
-                  <button
+                          <Pause size={14} />
+                        ) : (
+                          <Play size={14} />
+                        )}
+                      </button>
+                      <button
                         onClick={() => handleUpvote(song.id)}
-                        className={`hover:cursor-pointer w-10 h-10 text-black rounded-md transition-all duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] ${
+                        className={`hover:cursor-pointer w-8 h-8 text-black rounded-md transition-all duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] ${
                           recentlyUpvoted.has(song.id)
                             ? 'bg-violet-400 scale-110 shadow-lg shadow-violet-500/50 animate-pulse'
                             : 'bg-emerald-300 hover:bg-violet-400 hover:scale-105 hover:shadow-lg hover:shadow-violet-500/50'
                         }`}
                       >
-                        <ArrowUp size={16} className={recentlyUpvoted.has(song.id) ? 'animate-bounce' : ''} />
-                  </button>
+                        <ArrowUp size={14} className={recentlyUpvoted.has(song.id) ? 'animate-bounce' : ''} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Bottom row: Stats */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      <div className="text-center">
+                        <div className={`text-sm font-bold text-white hover:text-violet-300 transition-all duration-300 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] ${
+                          recentlyUpvoted.has(song.id) ? 'scale-125 text-violet-300' : ''
+                        }`}>
+                          {song.upvote_count}
+                        </div>
+                        <div className="text-xs text-slate-400">upvotes</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]">
+                          {song.audio_url ? '🎵' : '⏳'}
+                        </div>
+                        <div className="text-xs text-slate-400">audio</div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-emerald-300">
+                        {(() => {
+                          const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
+                          const percentage = Math.round((song.upvote_count / maxUpvotes) * 100);
+                          return `${percentage}%`;
+                        })()}
+                      </div>
+                      <div className="text-xs text-slate-400">popularity</div>
+                    </div>
+                  </div>
+                </div>
 
+                {/* Desktop Layout */}
+                <div className="hidden sm:flex items-center">
+                  {/* Rank */}
+                  <div className="relative flex-shrink-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all duration-500 ${
+                      rankingChanges.has(song.id) 
+                        ? 'animate-bounce scale-125'
+                        : ''
+                    } ${
+                      index === 0 
+                        ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50'
+                        : index === 1
+                        ? 'bg-gray-400 text-black shadow-lg shadow-gray-400/50'
+                        : index === 2
+                        ? 'bg-amber-600 text-black shadow-lg shadow-amber-600/50'
+                        : 'text-white'
+                    }`}>
+                      {index + 1}
+                    </div>
+                    {rankingChanges.has(song.id) && rankingDirections[song.id] && (
+                      <div className={`absolute -top-2 -right-2 w-4 h-4 rounded-full flex items-center justify-center text-xs animate-ping ${
+                        rankingDirections[song.id] === 'up' 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-red-500 text-white'
+                      }`}>
+                        {rankingDirections[song.id] === 'up' ? '↑' : '↓'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Song info */}
+                  <div className="flex items-center gap-3 ml-4 min-w-[200px]">
+                    <div>
+                      <div className="font-semibold text-white hover:text-emerald-400 transition-colors drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]">
+                        {song.title || `${song.repository.name} Beat`}
+                      </div>
+                      <a
+                        href={song.repository.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-slate-400 hover:text-emerald-400 transition-colors hover:drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]"
+                      >
+                        {song.repository.url.replace('https://github.com/', '')}
+                      </a>
+                      {song.lyrics_url && (
+                        <a
+                          href={song.lyrics_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                        >
+                          View Lyrics
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 lg:gap-8 ml-4 lg:ml-8">
+                    <div className="text-center">
+                      <div className={`text-sm lg:text-lg font-bold text-white hover:text-violet-300 transition-all duration-300 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)] ${
+                        recentlyUpvoted.has(song.id) ? 'scale-125 text-violet-300' : ''
+                      }`}>
+                        {song.upvote_count}
+                      </div>
+                      <div className="text-xs text-slate-400">upvotes</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm lg:text-lg font-bold text-emerald-400 hover:text-emerald-300 transition-colors drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]">
+                        {song.audio_url ? '🎵' : '⏳'}
+                      </div>
+                      <div className="text-xs text-slate-400">audio</div>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="flex-1 mx-4 lg:mx-8 min-w-[100px]">
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>popularity</span>
+                      <span>{(() => {
+                        const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
+                        const percentage = Math.round((song.upvote_count / maxUpvotes) * 100);
+                        return `${percentage}%`;
+                      })()}</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-lg h-2 overflow-hidden shadow-inner">
+                      <div 
+                        className="bg-emerald-300 h-2 rounded-lg hover:from-fuchsia-500 hover:to-violet-500 transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" 
+                        style={{ 
+                          width: `${(() => {
+                            const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
+                            return Math.round((song.upvote_count / maxUpvotes) * 100);
+                          })()}%` 
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => togglePlay(song.id)}
+                      className="hover:cursor-pointer w-10 h-10 text-white rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 flex items-center justify-center"
+                    >
+                      {playingId === song.id && isPlaying ? (
+                        <Pause size={16} />
+                      ) : (
+                        <Play size={16} />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleUpvote(song.id)}
+                      className={`hover:cursor-pointer w-10 h-10 text-black rounded-md transition-all duration-300 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] ${
+                        recentlyUpvoted.has(song.id)
+                          ? 'bg-violet-400 scale-110 shadow-lg shadow-violet-500/50 animate-pulse'
+                          : 'bg-emerald-300 hover:bg-violet-400 hover:scale-105 hover:shadow-lg hover:shadow-violet-500/50'
+                      }`}
+                    >
+                      <ArrowUp size={16} className={recentlyUpvoted.has(song.id) ? 'animate-bounce' : ''} />
+                    </button>
+                  </div>
                 </div>
 
                     {/* Enhanced Playing indicator with controls */}
@@ -694,30 +817,65 @@ export default function Home() {
           </>
         ) : (
           // Repository Analysis Tab
-          <div className="space-y-8 my-24">
+          <div className="space-y-6 sm:space-y-8 my-12 sm:my-24 px-2 sm:px-0">
             {/* Repository Analysis Header */}
-            <div className="text-center mb-8">
-              <h2 className="text-5xl font-bold mb-2 text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)] flex items-center justify-center gap-3">
-                Analyze GitHub <span className="bg-yellow-200 text-black px-2 py-1 rounded">Repository</span> 
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-2 text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)] flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+                <span>Analyze GitHub</span>
+                <span className="bg-yellow-200 text-black px-2 py-1 rounded text-xl sm:text-2xl lg:text-5xl">Repository</span> 
               </h2>
-              <p className="text-slate-400 text-sm">Get insights into contributors, languages, and activity for any repository</p>
+              <p className="text-slate-400 text-xs sm:text-sm px-4">Get insights into contributors, languages, and activity for any repository</p>
+            </div>
+
+            {/* Analysis Mode Toggle */}
+            <div className="max-w-2xl mx-auto px-4 mb-6">
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-slate-400 text-sm">Analysis Style:</span>
+                <div className="flex items-center gap-3">
+                <span className={`text-sm transition-colors ${analysisTone === 'fun' ? 'text-slate-400' : 'text-yellow-200 font-medium'}`}>
+                  Professional
+                  </span>
+                 
+                  <button
+                    onClick={() => setAnalysisTone(analysisTone === 'fun' ? 'serious' : 'fun')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                      analysisTone === 'fun' ? 'bg-yellow-200' : 'bg-slate-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        analysisTone === 'fun' ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm transition-colors ${analysisTone === 'serious' ? 'text-slate-400' : 'text-yellow-200 font-medium'}`}>
+                    Fun
+                  </span>
+                </div>
+              </div>
+              <p className="text-center text-xs text-slate-500 mt-2">
+                {analysisTone === 'fun' 
+                  ? 'Get a playful, creative analysis with personality insights' 
+                  : 'Get a professional, data-focused analysis'
+                }
+              </p>
             </div>
 
             {/* Repository Search Form */}
-            <div className="max-w-2xl mx-auto">
-              <form onSubmit={handleRepoSubmit} className="flex gap-4">
+            <div className="max-w-2xl mx-auto px-4">
+              <form onSubmit={handleRepoSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <input
                   type="url"
                   value={githubRepoUrl}
                   onChange={(e) => setGithubRepoUrl(e.target.value)}
                   placeholder="Enter GitHub repository URL (e.g., https://github.com/owner/repo)"
-                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-yellow-200 focus:shadow-lg focus:shadow-yellow-200/50 hover:bg-slate-800 transition-all duration-300"
+                  className="flex-1 px-3 sm:px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-yellow-200 focus:shadow-lg focus:shadow-yellow-200/50 hover:bg-slate-800 transition-all duration-300 text-sm sm:text-base"
                   required
                 />
                 <button
                   type="submit"
                   disabled={repoLoading || !githubRepoUrl.trim()}
-                  className="px-8 py-3 bg-yellow-200 text-black font-semibold rounded-md hover:bg-yellow-100 hover:scale-105 hover:shadow-lg hover:shadow-yellow-200/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
+                  className="px-4 sm:px-8 py-3 bg-yellow-200 text-black font-semibold rounded-md hover:bg-yellow-100 hover:scale-105 hover:shadow-lg hover:shadow-yellow-200/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer text-sm sm:text-base w-full sm:w-auto"
                 >
                   {repoLoading ? 'Analyzing...' : 'Analyze Repository'}
                 </button>
@@ -726,24 +884,24 @@ export default function Home() {
 
             {/* Repository Dashboard */}
             {repoData && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
                 {/* Repository Header */}
-                <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 shadow-[0_0_20px_rgba(250,204,21,0.1)]">
-                  <div className="flex items-center gap-6">
+                <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700 shadow-[0_0_20px_rgba(250,204,21,0.1)]">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                     <img
                       src={repoData.repository.owner.avatar_url}
                       alt={repoData.repository.owner.login}
-                      className="w-20 h-20 rounded-full border-2 border-yellow-200 shadow-lg"
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-yellow-200 shadow-lg flex-shrink-0"
                     />
-                    <div>
-                      <h3 className="text-2xl font-bold text-white">
+                    <div className="text-center sm:text-left flex-1">
+                      <h3 className="text-xl sm:text-2xl font-bold text-white">
                         {repoData.repository.name}
                       </h3>
                       <p className="text-yellow-200 font-medium">by @{repoData.repository.owner.login}</p>
                       {repoData.repository.description && (
-                        <p className="text-slate-400 mt-2">{repoData.repository.description}</p>
+                        <p className="text-slate-400 mt-2 text-sm sm:text-base">{repoData.repository.description}</p>
                       )}
-                      <div className="flex items-center gap-4 mt-3 text-sm text-slate-400">
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mt-3 text-xs sm:text-sm text-slate-400">
                         <span>⭐ {repoData.repository.stargazers_count} stars</span>
                         <span>🍴 {repoData.repository.forks_count} forks</span>
                         <span>📅 Created {new Date(repoData.repository.created_at).getFullYear()}</span>
@@ -761,38 +919,38 @@ export default function Home() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-yellow-200 mb-2">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700 text-center">
+                    <div className="text-xl sm:text-3xl font-bold text-yellow-200 mb-1 sm:mb-2">
                       {repoData.stats.totalCommits}
                     </div>
-                    <div className="text-slate-400 text-sm">Total Commits</div>
+                    <div className="text-slate-400 text-xs sm:text-sm">Total Commits</div>
                   </div>
-                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-yellow-200 mb-2">
+                  <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700 text-center">
+                    <div className="text-xl sm:text-3xl font-bold text-yellow-200 mb-1 sm:mb-2">
                       {repoData.stats.totalContributors}
                     </div>
-                    <div className="text-slate-400 text-sm">Contributors</div>
+                    <div className="text-slate-400 text-xs sm:text-sm">Contributors</div>
                   </div>
-                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-yellow-200 mb-2">
+                  <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700 text-center">
+                    <div className="text-xl sm:text-3xl font-bold text-yellow-200 mb-1 sm:mb-2">
                       {repoData.stats.topLanguage}
                     </div>
-                    <div className="text-slate-400 text-sm">Top Language</div>
+                    <div className="text-slate-400 text-xs sm:text-sm">Top Language</div>
                   </div>
-                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700 text-center">
-                    <div className="text-3xl font-bold text-yellow-200 mb-2">
+                  <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700 text-center">
+                    <div className="text-xl sm:text-3xl font-bold text-yellow-200 mb-1 sm:mb-2">
                       {Math.round(repoData.repository.size / 1024)} MB
                     </div>
-                    <div className="text-slate-400 text-sm">Repository Size</div>
+                    <div className="text-slate-400 text-xs sm:text-sm">Repository Size</div>
                   </div>
                 </div>
 
                 {/* Languages & Contributors */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {/* Language Breakdown */}
-                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                    <h4 className="text-xl font-bold text-white mb-4">Language Breakdown</h4>
+                  <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700">
+                    <h4 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Language Breakdown</h4>
                     <div className="space-y-3">
                       {repoData.stats.languageBreakdown.length > 0 ? (
                         repoData.stats.languageBreakdown.map((lang) => (
@@ -821,23 +979,23 @@ export default function Home() {
                   </div>
 
                   {/* Top Contributors */}
-                  <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                    <h4 className="text-xl font-bold text-white mb-4">Top Contributors</h4>
+                  <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700">
+                    <h4 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Top Contributors</h4>
                     <div className="space-y-3">
                       {repoData.stats.topContributors.length > 0 ? (
                         repoData.stats.topContributors.slice(0, 5).map((contributor) => (
                           <div key={contributor.user.login} className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                               <img
                                 src={contributor.user.avatar_url}
                                 alt={contributor.user.login}
-                                className="w-8 h-8 rounded-full border border-slate-600"
+                                className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-slate-600 flex-shrink-0"
                               />
-                              <span className="text-slate-300">{contributor.user.login}</span>
+                              <span className="text-slate-300 text-sm sm:text-base truncate">{contributor.user.login}</span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               <div className="text-right">
-                                <div className="text-sm text-white">{contributor.commits} commits</div>
+                                <div className="text-xs sm:text-sm text-white">{contributor.commits} commits</div>
                                 <div className="text-xs text-slate-400">{contributor.percentage}%</div>
                               </div>
                             </div>
@@ -857,42 +1015,42 @@ export default function Home() {
 
                 {/* AI Insights Section */}
                 {repoData.aiInsights ? (
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                  <div className="space-y-4 sm:space-y-6">
+                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
                       🤖 AI Team Analysis
                     </h3>
                     
                     {/* Team Dynamics & Project Health */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                        <h4 className="text-xl font-bold text-yellow-200 mb-3">Team Dynamics</h4>
-                        <p className="text-slate-300 text-sm leading-relaxed">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                      <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700">
+                        <h4 className="text-lg sm:text-xl font-bold text-yellow-200 mb-2 sm:mb-3">Team Dynamics</h4>
+                        <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
                           {repoData.aiInsights.teamDynamics}
                         </p>
                       </div>
-                      <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                        <h4 className="text-xl font-bold text-yellow-200 mb-3">Project Health</h4>
-                        <p className="text-slate-300 text-sm leading-relaxed">
+                      <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700">
+                        <h4 className="text-lg sm:text-xl font-bold text-yellow-200 mb-2 sm:mb-3">Project Health</h4>
+                        <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
                           {repoData.aiInsights.projectHealth}
                         </p>
                       </div>
                     </div>
 
                     {/* Contributor Personalities */}
-                    <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
-                      <h4 className="text-xl font-bold text-yellow-200 mb-4">Contributor Personalities</h4>
-                      <div className="space-y-6">
+                    <div className="bg-slate-900 rounded-xl p-4 sm:p-6 border border-slate-700">
+                      <h4 className="text-lg sm:text-xl font-bold text-yellow-200 mb-3 sm:mb-4">Contributor Personalities</h4>
+                      <div className="space-y-4 sm:space-y-6">
                         {repoData.aiInsights.contributorPersonalities.map((personality) => (
-                          <div key={personality.user.login} className="bg-slate-800 rounded-lg p-4 border border-slate-600">
-                            <div className="flex items-start gap-4">
+                          <div key={personality.user.login} className="bg-slate-800 rounded-lg p-3 sm:p-4 border border-slate-600">
+                            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                               <img
                                 src={personality.user.avatar_url}
                                 alt={personality.user.login}
-                                className="w-12 h-12 rounded-full border-2 border-yellow-200 flex-shrink-0"
+                                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-yellow-200 flex-shrink-0 self-center sm:self-start"
                               />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h5 className="text-lg font-semibold text-white">
+                              <div className="flex-1 w-full">
+                                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 mb-2 sm:mb-2">
+                                  <h5 className="text-base sm:text-lg font-semibold text-white text-center sm:text-left">
                                     {personality.user.login}
                                   </h5>
                                   <span className="px-2 py-1 bg-yellow-200/20 text-yellow-200 text-xs rounded-full">
@@ -900,25 +1058,25 @@ export default function Home() {
                                   </span>
                                 </div>
                                 
-                                <div className="space-y-3">
+                                <div className="space-y-2 sm:space-y-3 text-center sm:text-left">
                                   <div>
-                                    <span className="text-sm font-medium text-yellow-200">Working Style: </span>
-                                    <span className="text-sm text-slate-300">{personality.workingStyle}</span>
+                                    <span className="text-xs sm:text-sm font-medium text-yellow-200">Working Style: </span>
+                                    <span className="text-xs sm:text-sm text-slate-300">{personality.workingStyle}</span>
                                   </div>
                                   
                                   <div>
-                                    <span className="text-sm font-medium text-yellow-200">Personality: </span>
-                                    <span className="text-sm text-slate-300">{personality.personality}</span>
+                                    <span className="text-xs sm:text-sm font-medium text-yellow-200">Personality: </span>
+                                    <span className="text-xs sm:text-sm text-slate-300">{personality.personality}</span>
                                   </div>
                                   
                                   <div>
-                                    <span className="text-sm font-medium text-yellow-200">Collaboration: </span>
-                                    <span className="text-sm text-slate-300">{personality.collaborationStyle}</span>
+                                    <span className="text-xs sm:text-sm font-medium text-yellow-200">Collaboration: </span>
+                                    <span className="text-xs sm:text-sm text-slate-300">{personality.collaborationStyle}</span>
                                   </div>
                                   
                                   <div>
-                                    <span className="text-sm font-medium text-yellow-200">Strengths: </span>
-                                    <div className="flex flex-wrap gap-1 mt-1">
+                                    <span className="text-xs sm:text-sm font-medium text-yellow-200">Strengths: </span>
+                                    <div className="flex flex-wrap gap-1 mt-1 justify-center sm:justify-start">
                                       {personality.strengths.map((strength, idx) => (
                                         <span
                                           key={idx}

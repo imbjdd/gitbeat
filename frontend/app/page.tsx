@@ -49,7 +49,7 @@ export default function Home() {
   const [dustAnalysis, setDustAnalysis] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [analysisTone, setAnalysisTone] = useState<'fun' | 'serious'>('serious');
+  const [analysisTone, setAnalysisTone] = useState<'fun' | 'serious'>('fun');
 
   // Suno polling hook for music generation
   const sunoPolling = useSunoPolling({

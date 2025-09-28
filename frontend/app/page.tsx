@@ -121,7 +121,9 @@ export default function Home() {
 
   // Auto-generate music when dustAnalysis is available
   useEffect(() => {
-    if (dustAnalysis && !isGenerating && !sunoPolling.isPolling) {
+    if (dustAnalysis && !isGenerating && !sunoPolling.isPolling && !hasGeneratedMusicRef.current) {
+      hasGeneratedMusicRef.current = true;
+      
       const generateMusic = async () => {
         setIsGenerating(true);
         try {
@@ -145,6 +147,7 @@ export default function Home() {
         } catch {
           // Silent error
           setIsAnalyzing(false); // Stop loading on error
+          hasGeneratedMusicRef.current = false; // Reset on error
         } finally {
           setIsGenerating(false);
         }
@@ -152,7 +155,7 @@ export default function Home() {
 
       generateMusic();
     }
-  }, [dustAnalysis, isGenerating, sunoPolling]);
+  }, [dustAnalysis, isGenerating, sunoPolling.isPolling, sunoPolling.startPolling]);
 
   // Fetch songs on component mount
   useEffect(() => {
@@ -492,6 +495,7 @@ export default function Home() {
                 
                 setUrlError("");
                 setIsAnalyzing(true);
+                hasGeneratedMusicRef.current = false; // Reset flag for new analysis
                 try {
                   const response = await fetch('/api/dust/conversation', {
                     method: 'POST',

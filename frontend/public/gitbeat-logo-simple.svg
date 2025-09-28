@@ -1,0 +1,17 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="100" fill="white"/>
+  <!-- Cat silhouette -->
+  <path d="M60 90 C60 70, 80 50, 100 50 C120 50, 140 70, 140 90 L140 130 C140 150, 120 170, 100 170 C80 170, 60 150, 60 130 Z" fill="black"/>
+  <!-- Cat ears -->
+  <path d="M80 50 L85 35 L95 45 Z" fill="black"/>
+  <path d="M105 45 L115 35 L120 50 Z" fill="black"/>
+  <!-- Cat tail -->
+  <path d="M140 110 C150 105, 160 110, 165 120 C170 130, 165 140, 155 135 C150 130, 145 120, 140 115" fill="black"/>
+  <!-- Musical notes above -->
+  <circle cx="110" cy="30" r="3" fill="black"/>
+  <rect x="113" y="25" width="1.5" height="8" fill="black"/>
+  <circle cx="125" cy="25" r="2.5" fill="black"/>
+  <rect x="127.5" y="20" width="1.5" height="7" fill="black"/>
+  <circle cx="135" cy="35" r="2" fill="black"/>
+  <rect x="137" y="30" width="1" height="6" fill="black"/>
+</svg>

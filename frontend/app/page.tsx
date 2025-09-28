@@ -384,13 +384,24 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Header */}
         <div className="flex items-center justify-center sm:justify-between mb-6 sm:mb-8">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <img 
-              src="/gitbeat-logo-simple.svg" 
-              alt="GitBeat Logo" 
-              className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_10px_rgba(16,185,129,0.6)]"
-            />
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent hover:from-orange-400 hover:to-fuchsia-400 transition-all duration-500 cursor-pointer drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]">gitbeat 🎧</h1>
+          <div className="flex items-center justify-center">
+            <h1 className={`text-xl sm:text-2xl lg:text-3xl font-bold transition-all duration-500 cursor-pointer flex items-center -gap-1 ${
+              activeTab === 'beats' 
+                ? 'text-emerald-300 drop-shadow-[0_0_15px_rgba(16,185,129,0.6)]' 
+                : 'text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)]'
+            }`}>
+              gitbeat 
+              <img 
+                src={activeTab === 'beats' ? '/gitbeat-logo-green.svg' : '/gitbeat-logo-yellow.svg'}
+                alt="GitBeat Icon" 
+                className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 hover:scale-110 transition-all duration-500"
+                style={{
+                  filter: activeTab === 'beats' 
+                    ? 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.6))' 
+                    : 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.6))'
+                }}
+              />
+            </h1>
           </div>
         </div>
 
@@ -433,11 +444,7 @@ export default function Home() {
               <span className="flex items-center gap-2">Turn your GitHub repo into</span>
               <span className="flex items-center gap-2">
                 <span className="bg-emerald-300 text-black px-2 py-1 rounded text-xl sm:text-2xl lg:text-5xl">beats</span> 
-                <img 
-                  src="/gitbeat-logo-singing.svg" 
-                  alt="GitBeat Singing Cat" 
-                  className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]"
-                />
+                <Music className="text-emerald-300 drop-shadow-[0_0_15px_rgba(110,231,183,0.8)]" size={32} />
               </span>
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm">Paste your GitHub repository URL to generate music</p>

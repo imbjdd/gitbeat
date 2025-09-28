@@ -1,4 +1,4 @@
-import { Play, Pause, ArrowUp, Share2, Download } from "lucide-react";
+import { Play, Pause, ArrowUp, Music, Clock, Share2, Download } from "lucide-react";
 import { Song } from './types';
 import { useState } from 'react';
 import Toast from './Toast';
@@ -14,6 +14,7 @@ interface SongCardProps {
   recentlyUpvoted: Set<string>;
   rankingChanges: Set<string>;
   rankingDirections: {[key: string]: 'up' | 'down'};
+  highlightedSong: string | null;
   onTogglePlay: (id: string) => void;
   onUpvote: (id: string) => void;
   onSeek: (time: number) => void;
@@ -31,6 +32,7 @@ export default function SongCard({
   recentlyUpvoted,
   rankingChanges,
   rankingDirections,
+  highlightedSong,
   onTogglePlay,
   onUpvote,
   onSeek,
@@ -133,10 +135,13 @@ export default function SongCard({
 
   return (
     <div
+      id={`song-${song.id}`}
       className={`p-3 sm:p-4 rounded-lg transition-all duration-500 hover:shadow-xl transform ${
-        rankingChanges.has(song.id) 
-          ? 'animate-pulse scale-105 ring-2 ring-emerald-400/50'
-          : ''
+        highlightedSong === song.id
+          ? 'animate-pulse scale-105 ring-4 ring-yellow-400/70 shadow-[0_0_40px_rgba(255,215,0,0.5)] bg-gradient-to-r from-yellow-900/30 to-orange-900/30'
+          : rankingChanges.has(song.id) 
+            ? 'animate-pulse scale-105 ring-2 ring-emerald-400/50'
+            : ''
       } bg-[#1C2530] hover:bg-slate-800 border-slate-600 hover:border-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.1)] hover:shadow-emerald-500/20 border hover:scale-[1.02]`}
       style={{
         transitionProperty: 'all, transform, box-shadow',
@@ -246,12 +251,6 @@ export default function SongCard({
               </div>
               <div className="text-xs text-slate-400">upvotes</div>
             </div>
-            <div className="text-center">
-              <div className="text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]">
-                {song.audio_url ? '🎵' : '⏳'}
-              </div>
-              <div className="text-xs text-slate-400">audio</div>
-            </div>
           </div>
           
           <div className="text-right">
@@ -319,12 +318,6 @@ export default function SongCard({
               {song.upvote_count}
             </div>
             <div className="text-xs text-slate-400">upvotes</div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm lg:text-lg font-bold text-emerald-400 hover:text-emerald-300 transition-colors drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]">
-              {song.audio_url ? '🎵' : '⏳'}
-            </div>
-            <div className="text-xs text-slate-400">audio</div>
           </div>
         </div>
 

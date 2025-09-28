@@ -47,6 +47,12 @@ export default function Home() {
   
   // Custom hooks
   const loadingText = useLoadingText(isAnalyzing || repoLoading || aiAnalyzing);
+  
+  // Ref for auto-scrolling to new songs
+  const newSongRef = useRef<string | null>(null);
+  
+  // State for highlighting newly added songs
+  const [highlightedSong, setHighlightedSong] = useState<string | null>(null);
 
   // Suno polling hook for music generation
   const sunoPolling = useSunoPolling({
@@ -74,6 +80,8 @@ export default function Home() {
             const saveData = await saveResponse.json();
             if (saveData.success) {
               setSongs([saveData.song, ...songs]);
+              newSongRef.current = saveData.song.id; // Mark this song for auto-scroll
+              setHighlightedSong(saveData.song.id); // Mark this song for highlighting
               setIsAnalyzing(false); // Stop loading when music is completely generated and saved
             }
           } catch {
@@ -174,9 +182,34 @@ export default function Home() {
       }, 800);
     }
 
+    // Auto-scroll to newly added song
+    if (newSongRef.current) {
+      const songElement = document.getElementById(`song-${newSongRef.current}`);
+      if (songElement) {
+        setTimeout(() => {
+          songElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }, 100); // Small delay to ensure DOM is updated
+      }
+      newSongRef.current = null; // Clear the ref
+    }
+
     // Update the ref with current rankings
     previousRankingsRef.current = currentRankings;
   }, [songs]); // Only depend on songs, not previousRankings
+
+  // Handle highlight timeout separately
+  useEffect(() => {
+    if (highlightedSong) {
+      const timeout = setTimeout(() => {
+        setHighlightedSong(null);
+      }, 3000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [highlightedSong]);
 
   const fetchSongs = async () => {
     try {
@@ -400,6 +433,7 @@ export default function Home() {
               recentlyUpvoted={recentlyUpvoted}
               rankingChanges={rankingChanges}
               rankingDirections={rankingDirections}
+              highlightedSong={highlightedSong}
               onTogglePlay={togglePlay}
               onUpvote={handleUpvote}
               onSeek={seekTo}

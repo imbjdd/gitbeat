@@ -11,6 +11,7 @@ interface LeaderboardProps {
   recentlyUpvoted: Set<string>;
   rankingChanges: Set<string>;
   rankingDirections: {[key: string]: 'up' | 'down'};
+  highlightedSong: string | null;
   onTogglePlay: (id: string) => void;
   onUpvote: (id: string) => void;
   onSeek: (time: number) => void;
@@ -27,6 +28,7 @@ export default function Leaderboard({
   recentlyUpvoted,
   rankingChanges,
   rankingDirections,
+  highlightedSong,
   onTogglePlay,
   onUpvote,
   onSeek,
@@ -62,6 +64,7 @@ export default function Leaderboard({
                 recentlyUpvoted={recentlyUpvoted}
                 rankingChanges={rankingChanges}
                 rankingDirections={rankingDirections}
+                highlightedSong={highlightedSong}
                 onTogglePlay={onTogglePlay}
                 onUpvote={onUpvote}
                 onSeek={onSeek}

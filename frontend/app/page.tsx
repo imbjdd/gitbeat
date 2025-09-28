@@ -499,11 +499,12 @@ export default function Home() {
                         : ''
                     } ${
                         'bg-[#1C2530] hover:bg-slate-800 border-slate-600 hover:border-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.1)]' // Other ranks
-                    } hover:shadow-emerald-500/20 border`}
+                    } hover:shadow-emerald-500/20 border hover:scale-[1.02]`}
                     style={{
                       transitionProperty: 'all, transform, box-shadow',
                       transitionDuration: '800ms',
                       transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                      animationDelay: `${index * 100}ms`,
                     }}
               >
                 {/* Mobile Layout */}

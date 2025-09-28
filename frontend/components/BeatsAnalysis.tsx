@@ -80,8 +80,8 @@ export default function BeatsAnalysis({
               <LoadingMessage
                 loadingText={loadingText}
                 title="your repository"
-                description="Creating your unique beats from code patterns"
-                estimatedTime="2-3 minutes"
+                description="Creating your unique beats from code patterns. Just leave the page open and come back in a few minutes."
+                estimatedTime="5 minutes"
                 process="Analyzing code → Generating lyrics → Creating music"
                 theme="emerald"
               />

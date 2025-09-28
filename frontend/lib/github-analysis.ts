@@ -82,7 +82,7 @@ export interface RepositoryAnalysis {
 /**
  * Analyzes a GitHub repository and returns comprehensive statistics
  */
-export async function analyzeGitHubRepository(repoUrl: string, setAiAnalyzing?: (analyzing: boolean) => void): Promise<RepositoryAnalysis> {
+export async function analyzeGitHubRepository(repoUrl: string, setAiAnalyzing?: (analyzing: boolean) => void, analysisTone: 'fun' | 'serious' = 'fun'): Promise<RepositoryAnalysis> {
   // Parse repository URL to get owner and repo name
   const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
   if (!match) {
@@ -169,7 +169,8 @@ export async function analyzeGitHubRepository(repoUrl: string, setAiAnalyzing?: 
         repoData,
         safeContributorsData,
         topContributors,
-        activityTimeline
+        activityTimeline,
+        analysisTone
       );
       analysis.aiInsights = aiInsights;
     } catch (error) {
@@ -294,7 +295,8 @@ export async function analyzeContributorsWithAI(
     commits: number;
     additions: number;
     deletions: number;
-  }>
+  }>,
+  analysisTone: 'fun' | 'serious' = 'fun'
 ): Promise<{
   teamDynamics: string;
   projectHealth: string;
@@ -330,7 +332,10 @@ export async function analyzeContributorsWithAI(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(analysisData)
+      body: JSON.stringify({
+        ...analysisData,
+        analysisTone
+      })
     });
 
     if (!response.ok) {

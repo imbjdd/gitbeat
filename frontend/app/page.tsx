@@ -49,6 +49,7 @@ export default function Home() {
   const [dustAnalysis, setDustAnalysis] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [analysisTone, setAnalysisTone] = useState<'fun' | 'serious'>('serious');
 
   // Suno polling hook for music generation
   const sunoPolling = useSunoPolling({
@@ -332,7 +333,7 @@ export default function Home() {
     setRepoLoading(true);
     setAiAnalyzing(false);
     try {
-      const analysis = await analyzeGitHubRepository(githubRepoUrl.trim(), setAiAnalyzing);
+      const analysis = await analyzeGitHubRepository(githubRepoUrl.trim(), setAiAnalyzing, analysisTone);
       setRepoData(analysis);
     } catch (error) {
       console.error('Error analyzing repository:', error);
@@ -823,6 +824,40 @@ export default function Home() {
                 <span className="bg-yellow-200 text-black px-2 py-1 rounded text-xl sm:text-2xl lg:text-5xl">Repository</span> 
               </h2>
               <p className="text-slate-400 text-xs sm:text-sm px-4">Get insights into contributors, languages, and activity for any repository</p>
+            </div>
+
+            {/* Analysis Mode Toggle */}
+            <div className="max-w-2xl mx-auto px-4 mb-6">
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-slate-400 text-sm">Analysis Style:</span>
+                <div className="flex items-center gap-3">
+                <span className={`text-sm transition-colors ${analysisTone === 'fun' ? 'text-slate-400' : 'text-yellow-200 font-medium'}`}>
+                  Professional
+                  </span>
+                 
+                  <button
+                    onClick={() => setAnalysisTone(analysisTone === 'fun' ? 'serious' : 'fun')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                      analysisTone === 'fun' ? 'bg-yellow-200' : 'bg-slate-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        analysisTone === 'fun' ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm transition-colors ${analysisTone === 'serious' ? 'text-slate-400' : 'text-yellow-200 font-medium'}`}>
+                    Fun
+                  </span>
+                </div>
+              </div>
+              <p className="text-center text-xs text-slate-500 mt-2">
+                {analysisTone === 'fun' 
+                  ? 'Get a playful, creative analysis with personality insights' 
+                  : 'Get a professional, data-focused analysis'
+                }
+              </p>
             </div>
 
             {/* Repository Search Form */}

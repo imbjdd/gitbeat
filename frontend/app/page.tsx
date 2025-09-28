@@ -465,7 +465,7 @@ export default function Home() {
                 }
               }}
               disabled={isAnalyzing}
-              className="px-4 sm:px-6 py-3 bg-green-300 text-black font-semibold rounded-md hover:bg-violet-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
+              className="hover:cursor-pointer hover:shadow-lg hover:shadow-violet-500/50 px-4 sm:px-6 py-3 bg-green-300 text-black font-semibold rounded-md hover:bg-violet-400 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
             >
               {isAnalyzing ? 'Loading...' : 'Analyze'}
             </button>

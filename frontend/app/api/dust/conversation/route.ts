@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       { url: "https://dust.tt" },
       {
         workspaceId: process.env.DUST_WORKSPACE_ID || "tKnROPZ670",
-        apiKey: process.env.DUST_API_KEY || "sk-1e8feb8f63e368ddc080b4fafd422e0a",
+        apiKey: process.env.DUST_API_KEY || "",
       },
       console
     );

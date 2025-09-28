@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     const { 
       prompt,
-      style = "Electronic",
+      style,
       title = "AI Generated Track",
       customMode = true,
       instrumental = false,
@@ -37,7 +37,19 @@ export async function POST(request: NextRequest) {
       audioWeight = 0.65
     }: SunoGenerateRequest = await request.json();
 
-    console.log("📥 Received Suno request:", { prompt, style, title });
+    // Extract style from the prompt if not provided
+    let extractedStyle = style;
+    if (!extractedStyle) {
+      // Look for music genre keywords in the prompt
+      const musicGenres = ['trap', 'hip-hop', 'electronic', 'rock', 'pop', 'jazz', 'blues', 'classical', 'country', 'reggae', 'funk', 'techno', 'house', 'dubstep', 'ambient', 'indie', 'metal', 'punk', 'rap', 'r&b', 'soul', 'disco', 'folk', 'grunge', 'alternative'];
+      const promptLower = prompt.toLowerCase();
+      
+      // Find the first music genre mentioned in the prompt
+      const foundGenre = musicGenres.find(genre => promptLower.includes(genre));
+      extractedStyle = foundGenre ? foundGenre.charAt(0).toUpperCase() + foundGenre.slice(1) : "Electronic";
+    }
+
+    console.log("📥 Received Suno request:", { prompt, style: extractedStyle, title });
 
     if (!prompt) {
       return NextResponse.json({ 
@@ -63,7 +75,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         prompt,
-        style,
+        style: extractedStyle,
         title,
         customMode,
         instrumental,

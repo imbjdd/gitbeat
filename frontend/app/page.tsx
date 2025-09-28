@@ -375,34 +375,46 @@ export default function Home() {
   };
 
   const handleUpvote = async (id: string) => {
-    // Add visual feedback immediately
-    setRecentlyUpvoted(prev => new Set(prev).add(id));
-    
-    // Remove visual feedback after animation
-    setTimeout(() => {
-      setRecentlyUpvoted(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
+    try {
+      const response = await fetch(`/api/songs/${id}/upvote`, {
+        method: 'POST',
       });
-    }, 600);
 
-    // Update UI immediately - this is the only UI update
-    setSongs(prevSongs => 
-      prevSongs.map(song => 
-        song.id === id 
-          ? { ...song, upvote_count: song.upvote_count + 1 }
-          : song
-      )
-    );
+      const data = await response.json();
 
-    // Update database in background (fire and forget)
-    fetch(`/api/songs/${id}/upvote`, {
-      method: 'POST',
-    }).catch(error => {
-      // Silent error - don't revert UI, just log
-      console.error('Background upvote failed:', error);
-    });
+      if (!response.ok) {
+        if (data.rateLimited) {
+          alert(data.error);
+          return;
+        }
+        throw new Error(data.error || 'Failed to upvote');
+      }
+
+      // Add visual feedback immediately
+      setRecentlyUpvoted(prev => new Set(prev).add(id));
+      
+      // Remove visual feedback after animation
+      setTimeout(() => {
+        setRecentlyUpvoted(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+      }, 600);
+
+      // Update UI with actual count from server
+      setSongs(prevSongs => 
+        prevSongs.map(song => 
+          song.id === id 
+            ? { ...song, upvote_count: data.upvote_count }
+            : song
+        )
+      );
+
+    } catch (error) {
+      console.error('Upvote failed:', error);
+      alert('Failed to upvote. Please try again.');
+    }
   };
 
   return (

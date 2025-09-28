@@ -50,7 +50,34 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [analysisTone, setAnalysisTone] = useState<'fun' | 'serious'>('fun');
+  const [urlError, setUrlError] = useState<string>("");
+  const [loadingText, setLoadingText] = useState("Analyzing");
   const hasGeneratedMusicRef = useRef(false);
+  
+  // Function to validate GitHub URL
+  const isValidGitHubUrl = (url: string): boolean => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname === 'github.com' && urlObj.pathname.split('/').length >= 3;
+    } catch {
+      return false;
+    }
+  };
+
+  // Enhanced loading text rotation
+  useEffect(() => {
+    if (isAnalyzing || repoLoading || aiAnalyzing) {
+      const loadingTexts = ["Analyzing", "Processing", "Generating", "Computing", "Thinking", "Working"];
+      let currentIndex = 0;
+      
+      const interval = setInterval(() => {
+        currentIndex = (currentIndex + 1) % loadingTexts.length;
+        setLoadingText(loadingTexts[currentIndex]);
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAnalyzing, repoLoading, aiAnalyzing]);
 
   // Suno polling hook for music generation
   const sunoPolling = useSunoPolling({
@@ -334,6 +361,13 @@ export default function Home() {
     e.preventDefault();
     if (!githubRepoUrl.trim()) return;
     
+    // Validate GitHub URL
+    if (!isValidGitHubUrl(githubRepoUrl.trim())) {
+      setUrlError("Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)");
+      return;
+    }
+    
+    setUrlError("");
     setRepoLoading(true);
     setAiAnalyzing(false);
     try {
@@ -341,7 +375,7 @@ export default function Home() {
       setRepoData(analysis);
     } catch (error) {
       console.error('Error analyzing repository:', error);
-      alert('Failed to analyze GitHub repository. Please check the URL.');
+      setUrlError('Failed to analyze GitHub repository. Please check the URL and try again.');
     } finally {
       setRepoLoading(false);
       setAiAnalyzing(false);
@@ -393,7 +427,10 @@ export default function Home() {
         <div className="flex justify-center mb-6 sm:mb-8 px-2">
           <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-600 w-full sm:w-auto">
             <button
-              onClick={() => setActiveTab('beats')}
+              onClick={() => {
+                setActiveTab('beats');
+                setUrlError("");
+              }}
               className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 rounded-md font-medium text-sm sm:text-base transition-all duration-300 hover:cursor-pointer ${
                 activeTab === 'beats'
                   ? 'bg-emerald-300 text-black shadow-lg shadow-emerald-300/50'
@@ -403,7 +440,10 @@ export default function Home() {
               Beats
             </button>
             <button
-              onClick={() => setActiveTab('repo')}
+              onClick={() => {
+                setActiveTab('repo');
+                setUrlError("");
+              }}
               className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 rounded-md font-medium text-sm sm:text-base transition-all duration-300 hover:cursor-pointer ${
                 activeTab === 'repo'
                   ? 'bg-yellow-200 text-black shadow-lg shadow-yellow-200/50'
@@ -438,8 +478,9 @@ export default function Home() {
             <input
               type="url"
               placeholder="https://github.com/username/repository"
-              className="flex-1 px-3 sm:px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-violet-400 focus:shadow-lg focus:shadow-violet-400/50 hover:bg-slate-700 transition-all duration-300 text-sm sm:text-base"
+              className="flex-1 px-3 sm:px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-700 transition-all duration-300 text-sm sm:text-base"
               id="dustRepoInput"
+              onChange={() => setUrlError("")}
             />
             <button
               onClick={async () => {
@@ -447,6 +488,13 @@ export default function Home() {
                 const repoUrl = input.value.trim();
                 if (!repoUrl) return;
                 
+                // Validate GitHub URL
+                if (!isValidGitHubUrl(repoUrl)) {
+                  setUrlError("Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)");
+                  return;
+                }
+                
+                setUrlError("");
                 setIsAnalyzing(true);
                 hasGeneratedMusicRef.current = false; // Reset flag for new analysis
                 try {
@@ -470,11 +518,39 @@ export default function Home() {
                 }
               }}
               disabled={isAnalyzing}
-              className="px-4 sm:px-6 py-3 bg-green-300 text-black font-semibold rounded-md hover:bg-violet-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
+              className="hover:cursor-pointer hover:shadow-lg hover:shadow-emerald-500/50 px-4 sm:px-6 py-3 bg-emerald-300 text-black font-semibold rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
             >
-              {isAnalyzing ? 'Loading...' : 'Analyze'}
+              {isAnalyzing ? `${loadingText}...` : 'Analyze'}
             </button>
           </div>
+          
+          {/* URL Error Message */}
+          {urlError && (
+            <div className="max-w-2xl mx-auto px-4 mt-3">
+              <div className="bg-red-900/50 border border-red-500/50 rounded-md p-3 text-red-200 text-sm">
+                ❌ {urlError}
+              </div>
+            </div>
+          )}
+          
+          {/* Enhanced Loading Message for Beats */}
+          {isAnalyzing && (
+            <div className="max-w-2xl mx-auto px-4 mt-6">
+              <div className="bg-slate-800/50 border border-emerald-500/30 rounded-lg p-6 text-center">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <div className="animate-spin w-6 h-6 border-3 border-emerald-400 border-t-transparent rounded-full"></div>
+                  <span className="text-emerald-300 font-medium">{loadingText} your repository...</span>
+                </div>
+                <div className="text-slate-400 text-sm mb-2">
+                  Creating your unique beats from code patterns
+                </div>
+                <div className="text-slate-500 text-xs">
+                  Estimated time: 2-3 minutes • Analyzing code → Generating lyrics → Creating music
+                </div>
+              </div>
+            </div>
+          )}
+          
           </form>
         </div>
 
@@ -872,7 +948,10 @@ export default function Home() {
                 <input
                   type="url"
                   value={githubRepoUrl}
-                  onChange={(e) => setGithubRepoUrl(e.target.value)}
+                  onChange={(e) => {
+                    setGithubRepoUrl(e.target.value);
+                    setUrlError("");
+                  }}
                   placeholder="Enter GitHub repository URL (e.g., https://github.com/owner/repo)"
                   className="flex-1 px-3 sm:px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-yellow-200 focus:shadow-lg focus:shadow-yellow-200/50 hover:bg-slate-800 transition-all duration-300 text-sm sm:text-base"
                   required
@@ -882,9 +961,38 @@ export default function Home() {
                   disabled={repoLoading || !githubRepoUrl.trim()}
                   className="px-4 sm:px-8 py-3 bg-yellow-200 text-black font-semibold rounded-md hover:bg-yellow-100 hover:scale-105 hover:shadow-lg hover:shadow-yellow-200/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer text-sm sm:text-base w-full sm:w-auto"
                 >
-                  {repoLoading ? 'Analyzing...' : 'Analyze Repository'}
+                  {repoLoading ? `${loadingText}...` : 'Analyze Repository'}
                 </button>
               </form>
+              
+              {/* URL Error Message for Repository Analysis */}
+              {urlError && activeTab === 'repo' && (
+                <div className="mt-4">
+                  <div className="bg-red-900/50 border border-red-500/50 rounded-md p-3 text-red-200 text-sm">
+                    ❌ {urlError}
+                  </div>
+                </div>
+              )}
+              
+              {/* Enhanced Loading Message for Repository Analysis */}
+              {(repoLoading || aiAnalyzing) && (
+                <div className="mt-6">
+                  <div className="bg-slate-800/50 border border-yellow-200/30 rounded-lg p-6 text-center">
+                    <div className="flex items-center justify-center gap-3 mb-4">
+                      <div className="animate-spin w-6 h-6 border-3 border-yellow-200 border-t-transparent rounded-full"></div>
+                      <span className="text-yellow-200 font-medium">
+                        {aiAnalyzing ? `${loadingText} team dynamics...` : `${loadingText} repository...`}
+                      </span>
+                    </div>
+                    <div className="text-slate-400 text-sm mb-2">
+                      {aiAnalyzing ? 'AI is analyzing contributor patterns and personalities' : 'Gathering repository statistics and contributor data'}
+                    </div>
+                    <div className="text-slate-500 text-xs">
+                      Estimated time: {aiAnalyzing ? '1-2 minutes' : '30-60 seconds'} • {aiAnalyzing ? 'Analyzing commits → Identifying patterns → Generating insights' : 'Fetching data → Processing stats → Building dashboard'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Repository Dashboard */}

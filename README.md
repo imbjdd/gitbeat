@@ -16,7 +16,9 @@ GitBeat is a web application that transforms GitHub repositories into music. Ana
 - **Styling**: Tailwind CSS v4, shadcn/ui components
 - **Database**: Supabase (PostgreSQL)
 - **AI Services**: 
-  - Dust.tt for repository analysis
+  - **Dust.tt** for repository analysis
+  - **OpenAI** Agent to analyze the repo using the GitHub MCP
+  - **Lovable** Front-end and design iteration
   - Suno AI for music generation
 - **APIs**: GitHub API for repository data
 

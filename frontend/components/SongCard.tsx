@@ -105,7 +105,7 @@ export default function SongCard({
     }
 
     // First, let's properly format the text by adding line breaks
-    let formattedText = text
+    const formattedText = text
       // Add line break after genre markers
       .replace(/(\*\*[^*]+\*\*)/g, '$1\n')
       // Add line break after section headers

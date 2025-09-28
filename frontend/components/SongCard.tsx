@@ -1,6 +1,6 @@
+import React, { useState } from 'react';
 import { Play, Pause, ArrowUp, ChevronDown, ChevronUp, Music, Clock, Share2, Download } from "lucide-react";
 import { Song } from './types';
-import { useState } from 'react';
 import Toast from './Toast';
 
 interface SongCardProps {
@@ -97,6 +97,70 @@ export default function SongCard({
     if (!isLyricsExpanded && !lyrics) {
       fetchLyrics();
     }
+  };
+
+  const formatLyrics = (text: string) => {
+    if (!text || text === 'No lyrics available') {
+      return <div className="text-slate-500 italic">{text}</div>;
+    }
+
+    // First, let's properly format the text by adding line breaks
+    let formattedText = text
+      // Add line break after genre markers
+      .replace(/(\*\*[^*]+\*\*)/g, '$1\n')
+      // Add line break after section headers
+      .replace(/(\*\([^)]+\)\*)/g, '$1\n')
+      // Add line break before section headers (except at start)
+      .replace(/(?<!^)(\*\([^)]+\)\*)/g, '\n$1')
+      // Split long sentences into multiple lines at natural points
+      .replace(/([.!?])\s+(?=[A-Z])/g, '$1\n')
+      // Add line breaks after exclamations in lyrics
+      .replace(/([!])\s+(?=[A-Z][a-z])/g, '$1\n');
+
+    const lines = formattedText.split('\n');
+    const elements: React.ReactElement[] = [];
+    let key = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      if (!line) {
+        // Empty line - add spacing
+        elements.push(<div key={key++} className="h-2"></div>);
+        continue;
+      }
+
+      // Genre/Style (bold text like **Country**)
+      if (line.match(/^\*\*.*\*\*$/)) {
+        const genre = line.replace(/\*\*/g, '');
+        elements.push(
+          <div key={key++} className="text-emerald-400 font-bold text-base mb-3 text-center">
+            {genre}
+          </div>
+        );
+        continue;
+      }
+
+      // Section headers (italic text like *(Verse 1)*)
+      if (line.match(/^\*\(.*\)\*$/)) {
+        const section = line.replace(/\*\(|\)\*/g, '');
+        elements.push(
+          <div key={key++} className="text-violet-400 font-semibold text-sm mb-2 mt-4">
+            {section}
+          </div>
+        );
+        continue;
+      }
+
+      // Regular lyrics lines
+      elements.push(
+        <div key={key++} className="text-slate-300 leading-relaxed mb-1">
+          {line}
+        </div>
+      );
+    }
+
+    return elements;
   };
 
   const handleShare = async () => {
@@ -497,9 +561,9 @@ export default function SongCard({
               </div>
             ) : (
               <div className="max-h-64 overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-slate-300 text-sm leading-relaxed font-sans">
-                  {lyrics || 'No lyrics available'}
-                </pre>
+                <div className="text-slate-300 text-sm leading-relaxed space-y-3">
+                  {formatLyrics(lyrics || 'No lyrics available')}
+                </div>
               </div>
             )}
           </div>

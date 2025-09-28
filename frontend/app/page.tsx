@@ -133,7 +133,6 @@ export default function Home() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               prompt: `${dustAnalysis} - Create a song with vocals about this repository`,
-              style: "Electronic",
               title: "Repository Beat",
               model: "V5",
               instrumental: false

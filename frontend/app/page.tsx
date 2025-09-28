@@ -404,13 +404,57 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <Header />
-        
-        <TabNavigation 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab}
-          onTabChange={handleTabChange}
-        />
+        {/* Header */}
+        <div className="flex items-center justify-center sm:justify-between mb-6 sm:mb-8">
+          <div className="flex items-center justify-center">
+            <h1 className={`text-xl sm:text-2xl lg:text-3xl font-bold transition-all duration-500 cursor-pointer flex items-center -gap-1 ${
+              activeTab === 'beats' 
+                ? 'text-emerald-300 drop-shadow-[0_0_15px_rgba(16,185,129,0.6)]' 
+                : 'text-yellow-200 drop-shadow-[0_0_10px_rgba(250,204,21,0.6)]'
+            }`}>
+              gitbeat 
+              <img 
+                src={activeTab === 'beats' ? '/gitbeat-logo-green.svg' : '/gitbeat-logo-yellow.svg'}
+                alt="GitBeat Icon" 
+                className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 hover:scale-110 transition-all duration-500"
+                style={{
+                  filter: activeTab === 'beats' 
+                    ? 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.6))' 
+                    : 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.6))'
+                }}
+              />
+            </h1>
+          </div>
+        </div>
+
+
+
+        {/* Tab Navigation */}
+        <div className="flex justify-center mb-6 sm:mb-8 px-2">
+          <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-600 w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab('beats')}
+              className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 rounded-md font-medium text-sm sm:text-base transition-all duration-300 hover:cursor-pointer ${
+                activeTab === 'beats'
+                  ? 'bg-emerald-300 text-black shadow-lg shadow-emerald-300/50'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              Beats
+            </button>
+            <button
+              onClick={() => setActiveTab('repo')}
+              className={`flex-1 sm:flex-none px-3 sm:px-6 py-2 rounded-md font-medium text-sm sm:text-base transition-all duration-300 hover:cursor-pointer ${
+                activeTab === 'repo'
+                  ? 'bg-yellow-200 text-black shadow-lg shadow-yellow-200/50'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              <span className="hidden sm:inline">Repository Analysis</span>
+              <span className="sm:hidden">Analysis</span>
+            </button>
+          </div>
+        </div>
 
         {/* Tab Content */}
         {activeTab === 'beats' ? (

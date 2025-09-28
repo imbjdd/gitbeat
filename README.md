@@ -12,6 +12,8 @@ GitBeat is a web application that transforms GitHub repositories into music. Ana
 
 ## Technology Stack
 
+![GitBeat Tech Stack](frontend/public/techstack.png)
+
 - **Frontend**: Next.js 15 with React 19, TypeScript
 - **Styling**: Tailwind CSS v4, shadcn/ui components
 - **Database**: Supabase (PostgreSQL)
@@ -24,36 +26,7 @@ GitBeat is a web application that transforms GitHub repositories into music. Ana
 
 ## Architecture
 
-```mermaid
-graph TD
-    A[User Input: GitHub URL] --> B[Repository Analysis]
-    B --> C[Dust.tt AI Analysis]
-    C --> D[Suno Music Generation]
-    D --> E[Supabase Storage]
-    E --> F[Leaderboard Display]
-    
-    G[GitHub API] --> B
-    H[User Votes] --> I[Vote Processing]
-    I --> E
-    
-    subgraph "Frontend"
-        J[Next.js App]
-        K[React Components]
-        L[Tailwind UI]
-    end
-    
-    subgraph "Backend APIs"
-        M[Repository Analysis API]
-        N[Music Generation API]
-        O[Songs Management API]
-        P[Voting API]
-    end
-    
-    J --> M
-    J --> N
-    J --> O
-    J --> P
-```
+![GitBeat Workflow](frontend/public/workflow.png)
 
 ## Getting Started
 

@@ -38,6 +38,8 @@ coverage/
 ehthumbs.db
 Thumbs.db
 
+mcp-server/
+
 # IDE files
 .vscode/
 .idea/

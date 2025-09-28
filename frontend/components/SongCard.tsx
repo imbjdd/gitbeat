@@ -1,5 +1,6 @@
-import { Play, Pause, ArrowUp } from "lucide-react";
+import { Play, Pause, ArrowUp, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { Song } from './types';
+import { useState, useEffect } from 'react';
 
 interface SongCardProps {
   song: Song;
@@ -34,6 +35,11 @@ export default function SongCard({
   onSeek,
   formatTime
 }: SongCardProps) {
+  const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
+  const [lyrics, setLyrics] = useState<string>('');
+  const [lyricsLoading, setLyricsLoading] = useState(false);
+  const [lyricsError, setLyricsError] = useState<string>('');
+
   const getRankStyle = (index: number) => {
     if (index === 0) return 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50';
     if (index === 1) return 'bg-gray-400 text-black shadow-lg shadow-gray-400/50';
@@ -44,6 +50,34 @@ export default function SongCard({
   const getPopularityPercentage = () => {
     const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
     return Math.round((song.upvote_count / maxUpvotes) * 100);
+  };
+
+  const fetchLyrics = async () => {
+    if (!song.lyrics_url || lyrics) return;
+    
+    setLyricsLoading(true);
+    setLyricsError('');
+    
+    try {
+      const response = await fetch(song.lyrics_url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch lyrics');
+      }
+      const text = await response.text();
+      setLyrics(text);
+    } catch (err) {
+      setLyricsError('Failed to load lyrics');
+      console.error('Error fetching lyrics:', err);
+    } finally {
+      setLyricsLoading(false);
+    }
+  };
+
+  const handleLyricsToggle = () => {
+    setIsLyricsExpanded(!isLyricsExpanded);
+    if (!isLyricsExpanded && !lyrics) {
+      fetchLyrics();
+    }
   };
 
   return (
@@ -97,14 +131,13 @@ export default function SongCard({
                 {song.repository.url.replace('https://github.com/', '')}
               </a>
               {song.lyrics_url && (
-                <a
-                  href={song.lyrics_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                <button
+                  onClick={handleLyricsToggle}
+                  className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 transition-colors hover:cursor-pointer"
                 >
-                  View Lyrics
-                </a>
+                  <span>{isLyricsExpanded ? 'Hide Lyrics' : 'View Lyrics'}</span>
+                  {isLyricsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </button>
               )}
             </div>
           </div>
@@ -197,14 +230,13 @@ export default function SongCard({
               {song.repository.url.replace('https://github.com/', '')}
             </a>
             {song.lyrics_url && (
-              <a
-                href={song.lyrics_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-xs text-violet-400 hover:text-violet-300 transition-colors"
+              <button
+                onClick={handleLyricsToggle}
+                className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 transition-colors hover:cursor-pointer"
               >
-                View Lyrics
-              </a>
+                <span>{isLyricsExpanded ? 'Hide Lyrics' : 'View Lyrics'}</span>
+                {isLyricsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
             )}
           </div>
         </div>
@@ -318,6 +350,48 @@ export default function SongCard({
             <div className="text-xs text-slate-400 ml-2">
               Click on the progress bar to seek
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expandable Lyrics Section */}
+      {song.lyrics_url && (
+        <div className={`mt-4 border-t border-slate-700 pt-4 transition-all duration-300 ease-in-out overflow-hidden ${
+          isLyricsExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pt-0 mt-0 border-t-0'
+        }`}>
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+            <div className="flex items-center gap-2 mb-3">
+              
+              <h3 className="text-sm font-semibold text-white">Lyrics</h3>
+              <div className="text-xs text-slate-500 bg-slate-700 px-2 py-1 rounded">
+                AI Generated
+              </div>
+            </div>
+            
+            {lyricsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full"></div>
+                  <span className="text-slate-400 text-sm">Loading lyrics...</span>
+                </div>
+              </div>
+            ) : lyricsError ? (
+              <div className="text-center py-8">
+                <p className="text-red-400 text-sm mb-3">{lyricsError}</p>
+                <button
+                  onClick={fetchLyrics}
+                  className="px-3 py-1 bg-emerald-300 text-black text-xs font-medium rounded hover:bg-emerald-400 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : (
+              <div className="max-h-64 overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-slate-300 text-sm leading-relaxed font-sans">
+                  {lyrics || 'No lyrics available'}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
       )}

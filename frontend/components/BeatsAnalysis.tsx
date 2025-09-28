@@ -18,7 +18,9 @@ export default function BeatsAnalysis({
   setUrlError, 
   onAnalyze 
 }: BeatsAnalysisProps) {
-  const handleAnalyzeClick = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent page reload
+    
     const input = document.getElementById('dustRepoInput') as HTMLInputElement;
     const repoUrl = input.value.trim();
     if (!repoUrl) return;
@@ -32,6 +34,7 @@ export default function BeatsAnalysis({
     setUrlError("");
     onAnalyze(repoUrl);
   };
+
 
   return (
     <>
@@ -48,7 +51,7 @@ export default function BeatsAnalysis({
           <p className="text-slate-400 text-xs sm:text-sm">Paste your GitHub repository URL to generate music</p>
         </div>
         
-        <form className="max-w-2xl mx-auto space-y-4">
+        <form className="max-w-2xl mx-auto space-y-4" onSubmit={handleSubmit}>
           <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3 px-4">
             <input
               type="url"
@@ -58,8 +61,7 @@ export default function BeatsAnalysis({
               onChange={() => setUrlError("")}
             />
             <button
-              type="button"
-              onClick={handleAnalyzeClick}
+              type="submit"
               disabled={isAnalyzing}
               className="hover:cursor-pointer hover:shadow-lg hover:shadow-emerald-500/50 px-4 sm:px-6 py-3 bg-emerald-300 text-black font-semibold rounded-md hover:bg-emerald-400 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
             >

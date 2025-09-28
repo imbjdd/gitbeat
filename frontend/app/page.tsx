@@ -66,13 +66,16 @@ export default function Home() {
         
         if (repoUrl) {
           try {
+            // Get the prompt that was used for Suno generation
+            const sunoPrompt = `${dustAnalysis} - Create a song with vocals about this repository`;
+            
             const saveResponse = await fetch('/api/songs/ai-generated', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 repository_url: repoUrl,
                 suno_response: sunoData,
-                dust_analysis: dustAnalysis,
+                dust_analysis: sunoPrompt, // Use the full Suno prompt as lyrics
                 title: sunoData.title || "Repository AI Beat"
               })
             });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -21,7 +22,14 @@ function stripEmojis(text: string): string {
 // Function to upload lyrics to Supabase storage
 async function uploadLyricsToStorage(lyrics: string, songId: string): Promise<string | null> {
   try {
+    console.log("📤 Starting lyrics upload...");
+    console.log("📤 Song ID:", songId);
+    console.log("📤 Lyrics length:", lyrics.length);
+    console.log("📤 Lyrics preview:", lyrics.substring(0, 200) + "...");
+    
     const fileName = `${songId}_lyrics.txt`;
+    console.log("📤 File name:", fileName);
+    
     const { data, error } = await supabase.storage
       .from('lyrics-files')
       .upload(fileName, lyrics, {
@@ -31,14 +39,18 @@ async function uploadLyricsToStorage(lyrics: string, songId: string): Promise<st
 
     if (error) {
       console.error("❌ Error uploading lyrics:", error);
+      console.error("❌ Upload error details:", JSON.stringify(error, null, 2));
       return null;
     }
+
+    console.log("✅ Upload successful, data:", data);
 
     // Get public URL for the uploaded lyrics
     const { data: publicUrlData } = supabase.storage
       .from('lyrics-files')
       .getPublicUrl(fileName);
 
+    console.log("🔗 Generated public URL:", publicUrlData.publicUrl);
     return publicUrlData.publicUrl;
   } catch (error) {
     console.error("❌ Error in uploadLyricsToStorage:", error);
@@ -109,7 +121,28 @@ export async function POST(request: NextRequest) {
       console.log("✅ Created new repository:", repositoryId);
     }
 
-    // Create song record with audio URL if available
+    // Upload lyrics first if dust_analysis is provided
+    let lyricsUrl = null;
+    console.log("🔍 Checking dust_analysis:", {
+      exists: !!dust_analysis,
+      length: dust_analysis?.length || 0,
+      trimmedLength: dust_analysis?.trim().length || 0,
+      preview: dust_analysis?.substring(0, 100) + "..."
+    });
+    
+    if (dust_analysis && dust_analysis.trim()) {
+      console.log("📝 Uploading lyrics BEFORE creating song record");
+      // Strip emojis from the dust analysis before uploading
+      const cleanedLyrics = stripEmojis(dust_analysis);
+      console.log("📝 Cleaned lyrics length:", cleanedLyrics.length);
+      
+      // Generate a temporary ID for the lyrics file
+      const tempId = randomUUID();
+      lyricsUrl = await uploadLyricsToStorage(cleanedLyrics, tempId);
+      console.log("📝 Lyrics uploaded with URL:", lyricsUrl);
+    }
+
+    // Create song record with audio URL and lyrics URL if available
     const audioUrl = suno_response && typeof suno_response === 'object' && 'audioUrl' in suno_response 
       ? suno_response.audioUrl as string 
       : null;
@@ -117,10 +150,12 @@ export async function POST(request: NextRequest) {
     const songData = {
       repository_id: repositoryId,
       audio_url: audioUrl,
-      lyrics_url: null, // Will be updated after lyrics upload
+      lyrics_url: lyricsUrl, // Include lyrics URL from the start
     };
 
-    // First, create the song record to get an ID
+    console.log("🎵 Creating song record with data:", songData);
+
+    // Create the song record with lyrics URL already included
     const { data: song, error: songError } = await supabase
       .from('songs')
       .insert(songData)
@@ -135,36 +170,13 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to create song: ${songError.message}`);
     }
 
-    console.log("🎵 Created AI-generated song:", song.id);
-
-    // Upload lyrics if dust_analysis is provided
-    let lyricsUrl = null;
-    if (dust_analysis && dust_analysis.trim()) {
-      console.log("📝 Uploading lyrics for song:", song.id);
-      // Strip emojis from the dust analysis before uploading
-      const cleanedLyrics = stripEmojis(dust_analysis);
-      lyricsUrl = await uploadLyricsToStorage(cleanedLyrics, song.id);
-      
-      if (lyricsUrl) {
-        // Update the song record with the lyrics URL
-        const { error: updateError } = await supabase
-          .from('songs')
-          .update({ lyrics_url: lyricsUrl })
-          .eq('id', song.id);
-
-        if (updateError) {
-          console.error("❌ Error updating song with lyrics URL:", updateError);
-        } else {
-          console.log("✅ Updated song with lyrics URL:", lyricsUrl);
-        }
-      }
-    }
+    console.log("🎵 Created AI-generated song with lyrics URL:", song.id);
+    console.log("🎵 Song lyrics_url:", song.lyrics_url);
 
     return NextResponse.json({
       success: true,
       song: {
         ...song,
-        lyrics_url: lyricsUrl || song.lyrics_url,
         title: title || `${repoName} AI Beat`,
         upvote_count: 0
       }

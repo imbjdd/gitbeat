@@ -44,3 +44,8 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# MCP server and analysis agents (should not be in this repo)
+mcp-server/
+integrated-agent.js
+team-analysis-agent.js

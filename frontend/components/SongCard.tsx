@@ -1,5 +1,7 @@
-import { Play, Pause, ArrowUp, Music, Clock } from "lucide-react";
+import { Play, Pause, ArrowUp, Music, Clock, Share2, Download } from "lucide-react";
 import { Song } from './types';
+import { useState } from 'react';
+import Toast from './Toast';
 
 interface SongCardProps {
   song: Song;
@@ -36,6 +38,20 @@ export default function SongCard({
   onSeek,
   formatTime
 }: SongCardProps) {
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({
+    message: '',
+    type: 'success',
+    isVisible: false
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type, isVisible: true });
+  };
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, isVisible: false }));
+  };
+
   const getRankStyle = (index: number) => {
     if (index === 0) return 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50';
     if (index === 1) return 'bg-gray-400 text-black shadow-lg shadow-gray-400/50';
@@ -46,6 +62,75 @@ export default function SongCard({
   const getPopularityPercentage = () => {
     const maxUpvotes = Math.max(...songs.map(s => s.upvote_count), 1);
     return Math.round((song.upvote_count / maxUpvotes) * 100);
+  };
+
+  const handleShare = async () => {
+    if (!song.audio_url) {
+      showToast('No audio file available to share', 'error');
+      return;
+    }
+
+    try {
+      // Try to fetch the audio file as a blob for sharing
+      const response = await fetch(song.audio_url);
+      const audioBlob = await response.blob();
+      const audioFile = new File([audioBlob], `${song.title || `${song.repository.name}_Beat`}.mp3`, { type: 'audio/mpeg' });
+
+      const shareData = {
+        title: `${song.title || `${song.repository.name} Beat`} - GitBeat`,
+        text: `Check out this AI-generated beat from ${song.repository.url.replace('https://github.com/', '')}!`,
+        files: [audioFile]
+      };
+
+      // Check if we can share files
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+        showToast('Audio shared successfully!', 'success');
+      } else {
+        // Fallback: copy link to clipboard since we can't share files
+        const fallbackData = {
+          title: shareData.title,
+          text: `${shareData.text}\n🎵 Audio: ${song.audio_url}`,
+          url: window.location.href
+        };
+        await navigator.clipboard.writeText(`${fallbackData.title}\n${fallbackData.text}\n${fallbackData.url}`);
+        showToast('Link and audio URL copied to clipboard!', 'success');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      // Final fallback: copy text info to clipboard
+      try {
+        const fallbackText = `${song.title || `${song.repository.name} Beat`} - GitBeat\nCheck out this AI-generated beat from ${song.repository.url.replace('https://github.com/', '')}!\n🎵 Audio: ${song.audio_url}\n${window.location.href}`;
+        await navigator.clipboard.writeText(fallbackText);
+        showToast('Link and audio URL copied to clipboard!', 'success');
+      } catch (clipboardError) {
+        console.error('Error copying to clipboard:', clipboardError);
+        showToast('Failed to share audio', 'error');
+      }
+    }
+  };
+
+  const handleDownload = () => {
+    if (!song.audio_url) {
+      showToast('No audio file available for download', 'error');
+      return;
+    }
+
+    try {
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = song.audio_url;
+      link.download = `${song.title || `${song.repository.name}_Beat`}.mp3`;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Download started!', 'success');
+    } catch (error) {
+      console.error('Error downloading:', error);
+      showToast('Failed to download file', 'error');
+    }
   };
 
   return (
@@ -135,6 +220,22 @@ export default function SongCard({
               }`}
             >
               <ArrowUp size={14} className={recentlyUpvoted.has(song.id) ? 'animate-bounce' : ''} />
+            </button>
+            <button
+              onClick={handleShare}
+              disabled={!song.audio_url}
+              className="hover:cursor-pointer w-8 h-8 text-slate-400 hover:text-emerald-400 rounded-md hover:bg-slate-700/50 hover:scale-105 transition-all duration-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title="Share"
+            >
+              <Share2 size={14} />
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={!song.audio_url}
+              className="hover:cursor-pointer w-8 h-8 text-slate-400 hover:text-emerald-400 rounded-md hover:bg-slate-700/50 hover:scale-105 transition-all duration-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+              title="Download"
+            >
+              <Download size={14} />
             </button>
           </div>
         </div>
@@ -256,6 +357,22 @@ export default function SongCard({
           >
             <ArrowUp size={16} className={recentlyUpvoted.has(song.id) ? 'animate-bounce' : ''} />
           </button>
+          <button
+            onClick={handleShare}
+            disabled={!song.audio_url}
+            className="hover:cursor-pointer w-10 h-10 text-slate-400 hover:text-emerald-400 rounded-md hover:bg-slate-700/50 hover:scale-105 transition-all duration-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+            title="Share"
+          >
+            <Share2 size={16} />
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={!song.audio_url}
+            className="hover:cursor-pointer w-10 h-10 text-slate-400 hover:text-emerald-400 rounded-md hover:bg-slate-700/50 hover:scale-105 transition-all duration-300 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+            title="Download"
+          >
+            <Download size={16} />
+          </button>
         </div>
       </div>
 
@@ -314,6 +431,14 @@ export default function SongCard({
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 }

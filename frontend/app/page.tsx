@@ -52,7 +52,8 @@ export default function Home() {
   const [analysisTone, setAnalysisTone] = useState<'fun' | 'serious'>('fun');
   const [urlError, setUrlError] = useState<string>("");
   const [loadingText, setLoadingText] = useState("Analyzing");
-
+  const hasGeneratedMusicRef = useRef(false);
+  
   // Function to validate GitHub URL
   const isValidGitHubUrl = (url: string): boolean => {
     try {

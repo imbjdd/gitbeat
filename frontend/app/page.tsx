@@ -76,20 +76,55 @@ export default function Home() {
             const saveData = await saveResponse.json();
             if (saveData.success) {
               setSongs([saveData.song, ...songs]);
-              alert('Music generated and saved successfully!');
-            } else {
-              alert(`Music generated but failed to save: ${saveData.error}`);
+              setIsAnalyzing(false); // Stop loading when music is completely generated and saved
             }
           } catch {
-            alert('Music generated but failed to save to database.');
+            // Silent error
+            setIsAnalyzing(false); // Stop loading on error
           }
         }
       }
     },
-    onError: (error) => {
-      alert(`Music generation failed: ${error}`);
+    onError: () => {
+      // Silent error
+      setIsAnalyzing(false); // Stop loading on music generation error
     }
   });
+
+  // Auto-generate music when dustAnalysis is available
+  useEffect(() => {
+    if (dustAnalysis && !isGenerating && !sunoPolling.isPolling) {
+      const generateMusic = async () => {
+        setIsGenerating(true);
+        try {
+          const response = await fetch('/api/suno/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: `${dustAnalysis} - Create a song with vocals about this repository`,
+              style: "Electronic",
+              title: "Repository Beat",
+              model: "V5",
+              instrumental: false
+            })
+          });
+          
+          const data = await response.json();
+          if (data.data?.taskId) {
+            // Start polling for the result
+            sunoPolling.startPolling(data.data.taskId);
+          }
+        } catch {
+          // Silent error
+          setIsAnalyzing(false); // Stop loading on error
+        } finally {
+          setIsGenerating(false);
+        }
+      };
+
+      generateMusic();
+    }
+  }, [dustAnalysis, isGenerating, sunoPolling]);
 
   // Fetch songs on component mount
   useEffect(() => {
@@ -347,163 +382,6 @@ export default function Home() {
           <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent hover:from-orange-400 hover:to-fuchsia-400 transition-all duration-500 cursor-pointer drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]">gitbeat 🎧</h1>
         </div>
 
-        {/* Dust Analysis Section */}
-        <div className="my-12 p-6 bg-slate-900 rounded-lg border border-slate-700">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold mb-2 bg-violet-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(139,92,246,0.6)]">Analyze Repository with AI</h2>
-            <p className="text-slate-400 text-sm">Get AI insights about any GitHub repository</p>
-          </div>
-          
-          <div className="max-w-2xl mx-auto flex gap-3">
-            <input
-              type="url"
-              placeholder="https://github.com/username/repository"
-              className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-violet-400 focus:shadow-lg focus:shadow-violet-400/50 hover:bg-slate-700 transition-all duration-300"
-              id="dustRepoInput"
-            />
-            <button
-              onClick={async () => {
-                const input = document.getElementById('dustRepoInput') as HTMLInputElement;
-                const repoUrl = input.value.trim();
-                if (!repoUrl) return;
-                
-                setIsAnalyzing(true);
-                try {
-                  const response = await fetch('/api/dust/conversation', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      message: `Analyze this repository: ${repoUrl}`,
-                      github_repo: repoUrl
-                    })
-                  });
-                  
-                  const data = await response.json();
-                  if (data.error) {
-                    alert(`Error: ${data.error}`);
-                  } else {
-                    setDustAnalysis(data.content || "");
-                    alert(`Analysis complete! View at: ${data.conversationUrl}`);
-                  }
-                } catch {
-                  alert('Error analyzing repository');
-                } finally {
-                  setIsAnalyzing(false);
-                }
-              }}
-              disabled={isAnalyzing}
-              className="px-6 py-3 bg-violet-500 text-white font-semibold rounded-md hover:bg-violet-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAnalyzing ? 'Analyzing...' : 'Analyze'}
-            </button>
-          </div>
-        </div>
-
-        {/* Display Dust Analysis Result */}
-        {dustAnalysis && (
-          <div className="my-12 p-6 bg-slate-900 rounded-lg border border-violet-500/30">
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-violet-300 mb-2">Repository Analysis</h3>
-              <div className="bg-slate-800 p-4 rounded-md max-h-60 overflow-y-auto">
-                <pre className="text-sm text-slate-300 whitespace-pre-wrap">{dustAnalysis}</pre>
-              </div>
-            </div>
-            <button
-              onClick={async () => {
-                if (!dustAnalysis) return;
-                
-                setIsGenerating(true);
-                try {
-                  const response = await fetch('/api/suno/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      prompt: `${dustAnalysis} - Create a song with vocals about this repository`,
-                      style: "Electronic",
-                      title: "Repository Beat",
-                      model: "V5",
-                      instrumental: false
-                    })
-                  });
-                  
-                  const data = await response.json();
-                  if (data.error) {
-                    alert(`Error: ${data.error}`);
-                  } else if (data.data?.taskId) {
-                    // Start polling for the result
-                    sunoPolling.startPolling(data.data.taskId);
-                    alert('Music generation started! You will be notified when it completes.');
-                  } else {
-                    alert('Music generation started but no task ID received');
-                  }
-                } catch {
-                  alert('Error generating music');
-                } finally {
-                  setIsGenerating(false);
-                }
-              }}
-              disabled={isGenerating || sunoPolling.isPolling}
-              className="w-full px-6 py-3 bg-pink-500 text-white font-semibold rounded-md hover:bg-pink-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGenerating ? 'Starting Generation...' : sunoPolling.isPolling ? sunoPolling.progress : '🎵 Generate Music from Analysis'}
-            </button>
-          </div>
-        )}
-
-        {/* Suno Music Generation Section */}
-        <div className="my-12 p-6 bg-slate-900 rounded-lg border border-slate-700">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold mb-2 bg-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(236,72,153,0.6)]">Generate Music with AI</h2>
-            <p className="text-slate-400 text-sm">Create music from text prompts using Suno AI</p>
-          </div>
-          
-          <div className="max-w-2xl mx-auto flex gap-3">
-            <input
-              type="text"
-              placeholder="A calm and relaxing piano track with soft melodies"
-              className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-pink-400 focus:shadow-lg focus:shadow-pink-400/50 hover:bg-slate-700 transition-all duration-300"
-              id="sunoPromptInput"
-            />
-            <button
-              onClick={async () => {
-                const input = document.getElementById('sunoPromptInput') as HTMLInputElement;
-                const prompt = input.value.trim();
-                if (!prompt) return;
-                
-                setIsGenerating(true);
-                try {
-                  const response = await fetch('/api/suno/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      prompt,
-                      style: "Electronic",
-                      title: "AI Generated Beat"
-                    })
-                  });
-                  
-                  const data = await response.json();
-                  if (data.error) {
-                    alert(`Error: ${data.error}`);
-                  } else if (data.data?.taskId) {
-                    alert(`Music generation started! Task ID: ${data.data.taskId}. Check back in a few minutes.`);
-                    input.value = ''; // Clear the input
-                  } else {
-                    alert('Music generation started but no task ID received');
-                  }
-                } catch {
-                  alert('Error generating music');
-                } finally {
-                  setIsGenerating(false);
-                }
-              }}
-              disabled={isGenerating}
-              className="px-6 py-3 bg-pink-500 text-white font-semibold rounded-md hover:bg-pink-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(236,72,153,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isGenerating ? 'Generating...' : 'Generate'}
-            </button>
-          </div>
-        </div>
 
 
         {/* Tab Navigation */}
@@ -543,58 +421,47 @@ export default function Home() {
           </div>
           
               <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-4">
-                {/* Repository URL */}
-              <input
-                type="url"
-                value={repoUrl}
-                onChange={(e) => setRepoUrl(e.target.value)}
-                placeholder="https://github.com/username/repository"
-                  required
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-                />
+       
+          <div className="max-w-2xl mx-auto flex gap-3">
+            <input
+              type="url"
+              placeholder="https://github.com/username/repository"
+              className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-violet-400 focus:shadow-lg focus:shadow-violet-400/50 hover:bg-slate-700 transition-all duration-300"
+              id="dustRepoInput"
+            />
+            <button
+              onClick={async () => {
+                const input = document.getElementById('dustRepoInput') as HTMLInputElement;
+                const repoUrl = input.value.trim();
+                if (!repoUrl) return;
                 
-                {/* Song Title */}
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Song title"
-                  required
-                  className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-                />
-                
-                {/* Audio File */}
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Audio File (required)</label>
-                  <input
-                    type="file"
-                    id="audioFile"
-                    accept="audio/*"
-                    onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                    required
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-emerald-300 file:text-black hover:file:bg-emerald-400 focus:outline-none focus:border-emerald-400 transition-all duration-300"
-                  />
-                </div>
-                
-                {/* Lyrics (Optional) */}
-                <div>
-                  <label className="block text-sm text-slate-400 mb-2">Lyrics (optional)</label>
-                  <textarea
-                    value={lyrics}
-                    onChange={(e) => setLyrics(e.target.value)}
-                    placeholder="Enter song lyrics..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:shadow-lg focus:shadow-emerald-400/50 hover:bg-slate-800 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.1)] resize-vertical"
-                  />
-                </div>
-                
-              <button
-                type="submit"
-                  disabled={submitting || !repoUrl.trim() || !title.trim() || !audioFile}
-                  className="w-full px-8 py-3 bg-emerald-300 text-black font-semibold rounded-md hover:bg-emerald-400 hover:scale-105 hover:shadow-lg hover:shadow-emerald-400/50 transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 hover:cursor-pointer"
-              >
-                  {submitting ? 'Uploading...' : 'Upload Song'}
-              </button>
+                setIsAnalyzing(true);
+                try {
+                  const response = await fetch('/api/dust/conversation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      message: `Analyze this repository: ${repoUrl}`,
+                      github_repo: repoUrl
+                    })
+                  });
+                  
+                  const data = await response.json();
+                  if (!data.error) {
+                    setDustAnalysis(data.content || "");
+                    // Don't set isAnalyzing to false here - let it continue during music generation
+                  }
+                } catch {
+                  // Silent error
+                  setIsAnalyzing(false);
+                }
+              }}
+              disabled={isAnalyzing}
+              className="px-6 py-3 bg-green-300 text-black font-semibold rounded-md hover:bg-violet-600 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAnalyzing ? 'Loading...' : 'Analyze'}
+            </button>
+          </div>
           </form>
         </div>
 

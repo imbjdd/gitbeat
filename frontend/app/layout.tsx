@@ -29,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="239ac931-feeb-43e7-a029-67856bd94a8f"></script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

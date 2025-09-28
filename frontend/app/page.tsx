@@ -347,6 +347,7 @@ export default function Home() {
   const handleBeatsAnalyze = async (repoUrl: string) => {
     setIsAnalyzing(true);
     hasGeneratedMusicRef.current = false; // Reset flag for new analysis
+    setDustAnalysis(""); // Clear previous analysis to trigger new generation
     try {
       const response = await fetch('/api/dust/conversation', {
         method: 'POST',
